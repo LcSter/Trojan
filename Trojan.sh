@@ -152,6 +152,8 @@ EOF
 	wget https://github.com/V2RaySSR/Trojan/raw/master/web.zip
     	unzip web.zip
 	systemctl restart nginx.service
+
+
 	#申请https证书
 	mkdir /usr/src/trojan-cert
 	curl https://get.acme.sh | sh
@@ -160,15 +162,23 @@ EOF
         --key-file   /usr/src/trojan-cert/private.key \
         --fullchain-file /usr/src/trojan-cert/fullchain.cer \
         --reloadcmd  "systemctl force-reload  nginx.service"
+
+
+
 	if test -s /usr/src/trojan-cert/fullchain.cer; then
         cd /usr/src
+
+
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
 	wget https://github.com/trojan-gfw/trojan/releases/download/v1.14.0/trojan-1.14.0-linux-amd64.tar.xz
 	tar xf trojan-1.*
+
 	#下载trojan客户端
 	wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
 	unzip trojan-cli.zip
+
 	cp /usr/src/trojan-cert/fullchain.cer /usr/src/trojan-cli/fullchain.cer
+
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
 	cat > /usr/src/trojan-cli/config.json <<-EOF
 {

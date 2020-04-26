@@ -217,7 +217,14 @@ function bbr_boost_sh(){
 }
 
 
+function download_trojan(){
 
+    #wget https://github.com/trojan-gfw/trojan/releases/download/v1.15.1/trojan-1.15.1-linux-amd64.tar.xz
+    trojanVersion=$(curl --silent "https://api.github.com/repos/trojan-gfw/trojan/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")')
+
+    green " ===== Trojan Version: ${trojanVersion}"
+
+}
 
 function start_menu(){
     clear
@@ -245,7 +252,7 @@ function start_menu(){
     read -p "请输入数字:" num
     case "$num" in
     1)
-    testPortUsage
+    download_trojan
     ;;
     2)
     testPortUsage
