@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # 字体颜色
 blue(){
     echo -e "\033[34m\033[01m$1\033[0m"
@@ -9,123 +10,220 @@ green(){
 red(){
     echo -e "\033[31m\033[01m$1\033[0m"
 }
-#copy from 秋水逸冰 ss scripts
-if [[ -f /etc/redhat-release ]]; then
-    release="centos"
-    systemPackage="yum"
-    systempwd="/usr/lib/systemd/system/"
-elif cat /etc/issue | grep -Eqi "debian"; then
-    release="debian"
-    systemPackage="apt-get"
-    systempwd="/lib/systemd/system/"
-elif cat /etc/issue | grep -Eqi "ubuntu"; then
-    release="ubuntu"
-    systemPackage="apt-get"
-    systempwd="/lib/systemd/system/"
-elif cat /etc/issue | grep -Eqi "centos|red hat|redhat"; then
-    release="centos"
-    systemPackage="yum"
-    systempwd="/usr/lib/systemd/system/"
-elif cat /proc/version | grep -Eqi "debian"; then
-    release="debian"
-    systemPackage="apt-get"
-    systempwd="/lib/systemd/system/"
-elif cat /proc/version | grep -Eqi "ubuntu"; then
-    release="ubuntu"
-    systemPackage="apt-get"
-    systempwd="/lib/systemd/system/"
-elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
-    release="centos"
-    systemPackage="yum"
-    systempwd="/usr/lib/systemd/system/"
-fi
+
+
+function setDateZone () {
+
+    if [[ -f /etc/localtime ]] && [[ -f /usr/share/zoneinfo/Asia/Shanghai ]];  then
+        mv /etc/localtime /etc/localtime.bak
+        cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+    fi
+
+    date -R
+}
+
+
+
+
+function installOnMyZsh () {
+
+    if [ "$osRelease" == "centos" ]; then
+
+        echo "Install ZSH and oh-my-zsh"
+        sudo $osSystemPackage update && sudo $osSystemPackage install zsh -y
+
+    elif [ "$osRelease" == "ubuntu" ]; then
+
+        echo "Install ZSH and oh-my-zsh"
+        $osSystemPackage install zsh -y
+
+    elif [ "$osRelease" == "debian" ]; then
+
+        echo "Install ZSH and oh-my-zsh"
+        $osSystemPackage install zsh -y
+
+    fi
+
+
+
+    if [[ ! -d "${HOME}/.oh-my-zsh" ]] ;  then
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    fi
+
+    if [[ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]] ;  then
+        git clone "https://github.com/zsh-users/zsh-autosuggestions" "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+    fi
+
+
+    zshConfig=${HOME}/.zshrc
+    zshTheme="maran"
+    sed -i 's/ZSH_THEME=.*/ZSH_THEME="'${zshTheme}'"/' $zshConfig
+    sed -i 's/plugins=(git)/plugins=(git cp history z rsync colorize zsh-autosuggestions)/' $zshConfig
+
+    zshAutosuggestionsConfig=${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+    sed -i "s/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=1'/" $zshAutosuggestionsConfig
+
+}
+
+
+osRelease=""
+osSystemPackage=""
+osSystemmdPath=""
+
+function getLinuxOSVersion () {
+    # copy from 秋水逸冰 ss scripts
+    if [[ -f /etc/redhat-release ]]; then
+        osRelease="centos"
+        osSystemPackage="yum"
+        osSystemmdPath="/usr/lib/systemd/system/"
+    elif cat /etc/issue | grep -Eqi "debian"; then
+        osRelease="debian"
+        osSystemPackage="apt-get"
+        osSystemmdPath="/lib/systemd/system/"
+    elif cat /etc/issue | grep -Eqi "ubuntu"; then
+        osRelease="ubuntu"
+        osSystemPackage="apt-get"
+        osSystemmdPath="/lib/systemd/system/"
+    elif cat /etc/issue | grep -Eqi "centos|red hat|redhat"; then
+        osRelease="centos"
+        osSystemPackage="yum"
+        osSystemmdPath="/usr/lib/systemd/system/"
+    elif cat /proc/version | grep -Eqi "debian"; then
+        osRelease="debian"
+        osSystemPackage="apt-get"
+        osSystemmdPath="/lib/systemd/system/"
+    elif cat /proc/version | grep -Eqi "ubuntu"; then
+        osRelease="ubuntu"
+        osSystemPackage="apt-get"
+        osSystemmdPath="/lib/systemd/system/"
+    elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
+        osRelease="centos"
+        osSystemPackage="yum"
+        osSystemmdPath="/usr/lib/systemd/system/"
+    fi
+
+    echo "OS info: ${osRelease}, ${osSystemPackage}, ${osSystemmdPath}"
+
+}
+
+
+osPort80=""
+osPort443=""
+osSELINUXCheck=""
+osSELINUXCheckIsReboot=""
+
+function testPortUsage() {
+    $osSystemPackage -y install net-tools socat
+
+    osPort80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
+    osPort443=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 443`
+
+    if [ -n "$osPort80" ]; then
+        process80=`netstat -tlpn | awk -F '[: ]+' '$5=="80"{print $9}'`
+        red "==========================================================="
+        red "检测到80端口被占用，占用进程为：${process80}，本次安装结束"
+        red "==========================================================="
+        exit 1
+    fi
+
+    if [ -n "$osPort443" ]; then
+        process443=`netstat -tlpn | awk -F '[: ]+' '$5=="443"{print $9}'`
+        red "============================================================="
+        red "检测到443端口被占用，占用进程为：${process443}，本次安装结束"
+        red "============================================================="
+        exit 1
+    fi
+
+    osSELINUXCheck=$(grep SELINUX= /etc/selinux/config | grep -v "#")
+    if [ "$osSELINUXCheck" == "SELINUX=enforcing" ]; then
+        red "======================================================================="
+        red "检测到SELinux为开启强制模式状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
+        red "======================================================================="
+        read -p "是否现在重启 ?请输入 [Y/n] :" osSELINUXCheckIsReboot
+        [ -z "${osSELINUXCheckIsReboot}" ] && osSELINUXCheckIsReboot="y"
+        if [[ $osSELINUXCheckIsReboot == [Yy] ]]; then
+            sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+                setenforce 0
+            echo -e "VPS 重启中..."
+            reboot
+        fi
+        exit
+    fi
+
+    if [ "$osSELINUXCheck" == "SELINUX=permissive" ]; then
+        red "======================================================================="
+        red "检测到SELinux为宽容模式状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
+        red "======================================================================="
+        read -p "是否现在重启 ?请输入 [Y/n] :" osSELINUXCheckIsReboot
+        [ -z "${osSELINUXCheckIsReboot}" ] && osSELINUXCheckIsReboot="y"
+        if [[ $osSELINUXCheckIsReboot == [Yy] ]]; then
+            sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
+                setenforce 0
+            echo -e "VPS 重启中..."
+            reboot
+        fi
+        exit
+    fi
+
+    if [ "$osRelease" == "centos" ]; then
+        if  [ -n "$(grep ' 6\.' /etc/redhat-release)" ] ;then
+        red "==============="
+        red "当前系统不受支持"
+        red "==============="
+        exit
+        fi
+
+        if  [ -n "$(grep ' 5\.' /etc/redhat-release)" ] ;then
+        red "==============="
+        red "当前系统不受支持"
+        red "==============="
+        exit
+        fi
+
+        systemctl stop firewalld
+        systemctl disable firewalld
+        rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
+        $osSystemPackage update -y
+        $osSystemPackage install curl wget xz git unzip -y
+
+
+    elif [ "$osRelease" == "ubuntu" ]; then
+        if  [ -n "$(grep ' 14\.' /etc/os-release)" ] ;then
+        red "==============="
+        red "当前系统不受支持"
+        red "==============="
+        exit
+        fi
+        if  [ -n "$(grep ' 12\.' /etc/os-release)" ] ;then
+        red "==============="
+        red "当前系统不受支持"
+        red "==============="
+        exit
+        fi
+
+        systemctl stop ufw
+        systemctl disable ufw
+        $osSystemPackage update -y
+        $osSystemPackage install curl wget git unzip xz-utils -y
+
+    elif [ "$osRelease" == "debian" ]; then
+        $osSystemPackage update -y
+        $osSystemPackage install curl wget git unzip xz-utils -y
+    fi
+
+}
+
+
 
 function install_trojan(){
 systemctl stop nginx
-$systemPackage -y install net-tools socat
-Port80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
-Port443=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 443`
-if [ -n "$Port80" ]; then
-    process80=`netstat -tlpn | awk -F '[: ]+' '$5=="80"{print $9}'`
-    red "==========================================================="
-    red "检测到80端口被占用，占用进程为：${process80}，本次安装结束"
-    red "==========================================================="
-    exit 1
-fi
-if [ -n "$Port443" ]; then
-    process443=`netstat -tlpn | awk -F '[: ]+' '$5=="443"{print $9}'`
-    red "============================================================="
-    red "检测到443端口被占用，占用进程为：${process443}，本次安装结束"
-    red "============================================================="
-    exit 1
-fi
-CHECK=$(grep SELINUX= /etc/selinux/config | grep -v "#")
-if [ "$CHECK" == "SELINUX=enforcing" ]; then
-    red "======================================================================="
-    red "检测到SELinux为开启状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
-    red "======================================================================="
-    read -p "是否现在重启 ?请输入 [Y/n] :" yn
-	[ -z "${yn}" ] && yn="y"
-	if [[ $yn == [Yy] ]]; then
-	    sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
-            setenforce 0
-	    echo -e "VPS 重启中..."
-	    reboot
-	fi
-    exit
-fi
-if [ "$CHECK" == "SELINUX=permissive" ]; then
-    red "======================================================================="
-    red "检测到SELinux为宽容状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
-    red "======================================================================="
-    read -p "是否现在重启 ?请输入 [Y/n] :" yn
-	[ -z "${yn}" ] && yn="y"
-	if [[ $yn == [Yy] ]]; then
-	    sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-            setenforce 0
-	    echo -e "VPS 重启中..."
-	    reboot
-	fi
-    exit
-fi
-if [ "$release" == "centos" ]; then
-    if  [ -n "$(grep ' 6\.' /etc/redhat-release)" ] ;then
-    red "==============="
-    red "当前系统不受支持"
-    red "==============="
-    exit
-    fi
-    if  [ -n "$(grep ' 5\.' /etc/redhat-release)" ] ;then
-    red "==============="
-    red "当前系统不受支持"
-    red "==============="
-    exit
-    fi
-    systemctl stop firewalld
-    systemctl disable firewalld
-    rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
-elif [ "$release" == "ubuntu" ]; then
-    if  [ -n "$(grep ' 14\.' /etc/os-release)" ] ;then
-    red "==============="
-    red "当前系统不受支持"
-    red "==============="
-    exit
-    fi
-    if  [ -n "$(grep ' 12\.' /etc/os-release)" ] ;then
-    red "==============="
-    red "当前系统不受支持"
-    red "==============="
-    exit
-    fi
-    systemctl stop ufw
-    systemctl disable ufw
-    apt-get update
-elif [ "$release" == "debian" ]; then
-    apt-get update
-fi
-$systemPackage -y install  nginx wget unzip zip curl tar >/dev/null 2>&1
+testPortUsage
+
+
+$osSystemPackage -y install  nginx wget unzip zip curl tar >/dev/null 2>&1
 systemctl enable nginx
 systemctl stop nginx
+
 green "======================="
 blue "请输入绑定到本VPS的域名"
 green "======================="
@@ -326,7 +424,7 @@ EOF
         mv /usr/src/trojan-macos/trojan-mac.zip /usr/share/nginx/html/${trojan_path}/
 	
     #增加启动脚本	
-cat > ${systempwd}trojan.service <<-EOF
+cat > ${osSystemmdPath}trojan.service <<-EOF
 [Unit]  
 Description=trojan  
 After=network.target  
@@ -343,7 +441,7 @@ PrivateTmp=true
 WantedBy=multi-user.target
 EOF
 
-	chmod +x ${systempwd}trojan.service
+	chmod +x ${osSystemmdPath}trojan.service
 	systemctl start trojan.service
 	systemctl enable trojan.service
 	green "======================================================================"
@@ -375,8 +473,8 @@ fi
 
 function repair_cert(){
 systemctl stop nginx
-Port80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
-if [ -n "$Port80" ]; then
+osPort80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
+if [ -n "$osPort80" ]; then
     process80=`netstat -tlpn | awk -F '[: ]+' '$5=="80"{print $9}'`
     red "==========================================================="
     red "检测到80端口被占用，占用进程为：${process80}，本次安装结束"
@@ -418,8 +516,8 @@ function remove_trojan(){
     red "================================"
     systemctl stop trojan
     systemctl disable trojan
-    rm -f ${systempwd}trojan.service
-    if [ "$release" == "centos" ]; then
+    rm -f ${osSystemmdPath}trojan.service
+    if [ "$osRelease" == "centos" ]; then
         yum remove -y nginx
     else
         apt autoremove -y nginx
@@ -435,10 +533,15 @@ function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
 
+
+
+
+
+
 start_menu(){
     clear
     green " ===================================="
-    green " Trojan 一键安装自动脚本 2020-2-27 更新      "
+    green " Trojan V2ray 一键安装自动脚本 2020-2-27 更新  "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
     green " 网站：www.v2rayssr.com （已开启禁止国内访问）"
     green " 此脚本为 atrandys 的，波仔集成BBRPLUS加速及MAC客户端 "
@@ -454,6 +557,12 @@ start_menu(){
     red " 2. 卸载trojan"
     green " 3. 修复证书"
     green " 4. 安装BBR-PLUS加速4合一脚本"
+    green " 4. 安装v2ray websocket tls1.3"
+    red " 5. 卸载v2ray websocket tls1.3"
+    green " 6. 安装 trojan + v2ray websocket tls1.3"
+    red " 7. 卸载 trojan + v2ray websocket tls1.3"
+    green " 8. 安装 Oh My Zsh , 和 插件zsh-autosuggestions"
+    green " 9. 设置时区为北京时间+0800区"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -470,6 +579,21 @@ start_menu(){
     4)
     bbr_boost_sh 
     ;;
+    5)
+    testPortUsage
+    ;;
+    6)
+    setDateZone
+    ;;
+    7)
+    testPortUsage
+    ;;
+    8)
+    setDateZone
+    ;;
+    9)
+    setDateZone
+    ;;
     0)
     exit 1
     ;;
@@ -482,4 +606,6 @@ start_menu(){
     esac
 }
 
+
+getLinuxOSVersion
 start_menu
