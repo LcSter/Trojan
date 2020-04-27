@@ -25,9 +25,7 @@ function setDateZone(){
 }
 
 
-
 function installOnMyZsh(){
-
     if [ "$osRelease" == "centos" ]; then
 
         echo "Install ZSH and oh-my-zsh"
@@ -44,7 +42,7 @@ function installOnMyZsh(){
         $osSystemPackage install zsh -y
     fi
 
-
+    # 安装 oh-my-zsh
     if [[ ! -d "${HOME}/.oh-my-zsh" ]] ;  then
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     fi
@@ -53,7 +51,7 @@ function installOnMyZsh(){
         git clone "https://github.com/zsh-users/zsh-autosuggestions" "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
     fi
 
-
+    # 配置 zshrc 文件
     zshConfig=${HOME}/.zshrc
     zshTheme="maran"
     sed -i 's/ZSH_THEME=.*/ZSH_THEME="'${zshTheme}'"/' $zshConfig
@@ -137,9 +135,10 @@ function testPortUsage() {
         red "======================================================================="
         read -p "是否现在重启 ?请输入 [Y/n] :" osSELINUXCheckIsReboot
         [ -z "${osSELINUXCheckIsReboot}" ] && osSELINUXCheckIsReboot="y"
+
         if [[ $osSELINUXCheckIsReboot == [Yy] ]]; then
             sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
-                setenforce 0
+            setenforce 0
             echo -e "VPS 重启中..."
             reboot
         fi
@@ -152,9 +151,10 @@ function testPortUsage() {
         red "======================================================================="
         read -p "是否现在重启 ?请输入 [Y/n] :" osSELINUXCheckIsReboot
         [ -z "${osSELINUXCheckIsReboot}" ] && osSELINUXCheckIsReboot="y"
+
         if [[ $osSELINUXCheckIsReboot == [Yy] ]]; then
             sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-                setenforce 0
+            setenforce 0
             echo -e "VPS 重启中..."
             reboot
         fi
@@ -162,18 +162,18 @@ function testPortUsage() {
     fi
 
     if [ "$osRelease" == "centos" ]; then
-        if  [ -n "$(grep ' 6\.' /etc/redhat-release)" ] ;then
-        red "==============="
-        red "当前系统不受支持"
-        red "==============="
-        exit
+        if  [ -n "$(grep ' 6\.' /etc/redhat-release)" ] ; then
+            red "==============="
+            red "当前系统不受支持"
+            red "==============="
+            exit
         fi
 
-        if  [ -n "$(grep ' 5\.' /etc/redhat-release)" ] ;then
-        red "==============="
-        red "当前系统不受支持"
-        red "==============="
-        exit
+        if  [ -n "$(grep ' 5\.' /etc/redhat-release)" ] ; then
+            red "==============="
+            red "当前系统不受支持"
+            red "==============="
+            exit
         fi
 
         systemctl stop firewalld
@@ -234,9 +234,18 @@ function install_nginx(){
     configLocalIp=`curl ipv4.icanhazip.com`
     if [ $configRealIp == $configLocalIp ] ; then
         green "=========================================="
-        green "       域名解析正常，开始安装 nginx"
+        green "  域名解析正常，开始安装 nginx"
+        green "  检测到域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}"
         green "=========================================="
         sleep 1s
+
+
+        if test -s ${nginxConfigPath}; then
+            green "==========================="
+            green "      Nginx 已存在, 退出安装!"
+            green "==========================="
+            exit
+        fi
 
         $osSystemPackage install nginx -y
         systemctl enable nginx.service
@@ -272,16 +281,21 @@ http {
 }
 EOF
 
-        #设置伪装网站
+        # 下载伪装站点 并设置伪装网站
         rm -rf ${configTrojanWebsitePath}/*
         mkdir -p ${configTrojanWebsitePath}
         wget -O ${configTrojanPath}/website/trojan_website.zip https://github.com/jinwyp/Trojan/raw/master/web.zip
         unzip -d ${configTrojanWebsitePath} ${configTrojanPath}/website/trojan_website.zip
+
+        wget -O ${configTrojanPath}/website/trojan_client_all.zip https://github.com/jinwyp/Trojan/raw/master/trojan_client_all.zip
+        unzip -d ${configTrojanWebsitePath} ${configTrojanPath}/website/trojan_client_all.zip
+
         systemctl start nginx.service
 
         green "=========================================="
         green "       Web服务器 nginx 安装成功!!"
         green "=========================================="
+
 
     else
         red "================================"
@@ -323,6 +337,13 @@ function download_trojan_server(){
     #wget https://github.com/trojan-gfw/trojan/releases/download/v1.15.1/trojan-1.15.1-linux-amd64.tar.xz
     trojanVersion=$(curl --silent "https://api.github.com/repos/trojan-gfw/trojan/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")')
 
+    if [[ -f ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz ]]; then
+
+        green "=========================================="
+        green "  已安装过 Trojan v${trojanVersion}, 退出安装 !"
+        green "=========================================="
+        exit
+    fi
     green "=========================================="
     green "       开始安装 Trojan Version: ${trojanVersion} !"
     green "=========================================="
@@ -429,7 +450,7 @@ function download_trojan_server(){
         "key": "$configTrojanCertPath/private.key",
         "key_password": "",
         "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-	"prefer_server_cipher": true,
+	    "prefer_server_cipher": true,
         "alpn": [
             "http/1.1"
         ],
@@ -467,7 +488,7 @@ After=network.target
 Type=simple
 PIDFile=${configTrojanPath}/src/trojan.pid
 ExecStart=${configTrojanPath}/src/trojan -l $configTrojanLogFile -c "${configTrojanPath}/src/server.conf"
-ExecReload=
+ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=${configTrojanPath}/src/trojan
 PrivateTmp=true
 
@@ -481,18 +502,44 @@ EOF
 
 
 	green "======================================================================"
-	green "       Trojan Version: ${trojanVersion} 安装成功!"
-	green "请使用以下链接下载trojan客户端，此客户端已配置好所有参数"
-	green "1、复制下面的链接，在浏览器打开，下载客户端"
-	yellow "Windows客户端下载：http://${configDomainTrojan}/trojan-win.zip"
-    yellow "MacOS客户端下载：http://${configDomainTrojan}/trojan-mac.zip"
-	green "2、Windows将下载的客户端解压，打开文件夹，打开start.bat即打开并运行Trojan客户端"
-	green "3、MacOS将下载的客户端解压，打开文件夹，打开start.command即打开并运行Trojan客户端"
-	green "4、Trojan客户端 可能需要搭配浏览器插件使用，例如switchyomega等"
-	green "访问  https://www.v2rayssr.com/trojan-1.html ‎ 下载 浏览器插件 及教程"
-	green "Trojan推荐使用 Mellow 工具代理（WIN/MAC通用）下载地址如下："
-	green "https://github.com/mellow-io/mellow/releases  (exe为Win客户端,dmg为Mac客户端)"
-	green "https://github.com/Qv2ray/Qv2ray/releases  (exe为Win客户端,dmg为Mac客户端)"
+	green "    Trojan Version: ${trojanVersion} 安装成功!"
+	green "    伪装站点为 http://${configDomainTrojan}!"
+	green "    伪装站点的静态html内容放置在目录 ${configTrojanWebsitePath}, 可自行更换网站内容!"
+	red "    nginx 配置在目录 ${nginxConfigPath} !"
+	red "    Trojan 服务器端配置在目录 ${configTrojanPath}/src/server.conf !"
+	green "======================================================================"
+	yellow "1 Windows 客户端下载：http://${configDomainTrojan}/download/trojan-windows.zip"
+	green "======================================================================"
+	green "请下载相应的trojan客户端:"
+	yellow "1 Windows 客户端下载：http://${configDomainTrojan}/download/trojan-windows.zip"
+	yellow "  Windows 客户端另一个版本下载：http://${configDomainTrojan}/download/Trojan-Qt5-windows.zip"
+    yellow "2 MacOS 客户端下载：http://${configDomainTrojan}/download/trojan-mac.zip"
+    yellow "  MacOS 客户端另一个版本下载：http://${configDomainTrojan}/download/Trojan-Qt5-macos.zip"
+    yellow "3 Android 客户端下载 https://github.com/trojan-gfw/igniter/releases "
+    yellow "4 iOS 客户端 请安装小火箭 https://shadowsockshelp.github.io/ios/ "
+    yellow "  iOS 请安装小火箭另一个地址 https://lueyingpro.github.io/shadowrocket/index.html "
+    yellow "  iOS 安装小火箭遇到问题 教程 https://github.com/shadowrocketHelp/help/ "
+    green "======================================================================"
+	green "教程与其他资源:"
+	green "访问 https://www.v2rayssr.com/trojan-1.html ‎ 下载 浏览器插件 客户端 及教程"
+	green "访问 https://westworldss.com/portal/page/download ‎ 下载 客户端 及教程"
+	green "======================================================================"
+	green "其他 Windows 客户端:"
+	green "https://github.com/TheWanderingCoel/Trojan-Qt5/releases (exe为Win客户端, dmg为Mac客户端)"
+	green "https://github.com/Qv2ray/Qv2ray/releases (exe为Win客户端, dmg为Mac客户端)"
+	green "https://github.com/Dr-Incognito/V2Ray-Desktop/releases (exe为Win客户端, dmg为Mac客户端)"
+	green "https://github.com/Fndroid/clash_for_windows_pkg/releases"
+	green "======================================================================"
+	green "其他 Mac 客户端:"
+	green "https://github.com/TheWanderingCoel/Trojan-Qt5/releases (exe为Win客户端, dmg为Mac客户端)"
+	green "https://github.com/Qv2ray/Qv2ray/releases (exe为Win客户端, dmg为Mac客户端)"
+	green "https://github.com/Dr-Incognito/V2Ray-Desktop/releases (exe为Win客户端, dmg为Mac客户端)"
+	green "https://github.com/JimLee1996/TrojanX/releases (exe为Win客户端, dmg为Mac客户端)"
+	green "https://github.com/yichengchen/clashX/releases "
+	green "======================================================================"
+	green "其他 Android 客户端:"
+	green "https://github.com/trojan-gfw/igniter/releases "
+	green "https://github.com/Kr328/ClashForAndroid/releases "
 	green "======================================================================"
 }
 
@@ -601,7 +648,7 @@ start_menu(){
     blue " 声明："
     red " *请不要在任何生产环境使用此脚本"
     red " *请不要有其他程序占用80和443端口"
-    red " *若是第二次使用脚本，请先执行卸载trojan"
+    red " *若是已安装trojan或第二次使用脚本，请先执行卸载trojan"
     green " ======================================="
     echo
     green " 1. 安装 trojan 和 nginx"
@@ -612,8 +659,8 @@ start_menu(){
     red " 5. 卸载v2ray websocket tls1.3"
     green " 6. 安装 trojan + v2ray websocket tls1.3"
     red " 7. 卸载 trojan + v2ray websocket tls1.3"
-    green " 8. 安装 Oh My Zsh , 和 插件zsh-autosuggestions"
-    green " 9. 设置时区为北京时间+0800区"
+    green " 8. 安装 Oh My Zsh , 和插件zsh-autosuggestions"
+    green " 9. 设置时区为北京时间+0800区 这样cron定时脚本安装北京时间运行"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num

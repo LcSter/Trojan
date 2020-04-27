@@ -1,8 +1,8 @@
-Trojan 一键安装脚本
+Trojan V2ray 一键安装脚本
 
 ====================================
 
-Trojan 一键安装自动脚本
+Trojan V2ray 一键安装自动脚本
 
 系统：centos7+/debian9+/ubuntu16.04+
 
@@ -16,6 +16,12 @@ Youtube：波仔分享
 
 脚本安装命令
 
-curl -O https://raw.githubusercontent.com/V2RaySSR/Trojan/master/Trojan.sh && chmod  x trojan.sh && ./trojan.sh
+```bash
+curl -O https://raw.githubusercontent.com/V2RaySSR/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
+```
 
-wget --no-check-certificate https://raw.githubusercontent.com/V2RaySSR/Trojan/master/Trojan.sh && chmod +x Trojan.sh && ./Trojan.sh
+或
+
+```bash
+wget --no-check-certificate https://raw.githubusercontent.com/V2RaySSR/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
+```
