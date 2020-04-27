@@ -26,6 +26,8 @@ function setDateZone(){
 
 
 function installOnMyZsh(){
+    testPortUsage
+
     if [ "$osRelease" == "centos" ]; then
 
         echo "Install ZSH and oh-my-zsh"
@@ -501,6 +503,13 @@ EOF
 	systemctl enable trojan.service
 
 
+    # 设置 cron 定时任务
+    # https://stackoverflow.com/questions/610839/how-can-i-programmatically-create-a-new-cron-job
+
+    # (crontab -l 2>/dev/null | grep -v '^[a-zA-Z]'; echo "15 4 * * 0,1,2,3,4,5,6 systemctl restart trojan.service") | sort - | uniq - | crontab -
+    (crontab -l ; echo "15 4 * * 0,1,2,3,4,5,6 systemctl restart trojan.service") | sort - | uniq - | crontab -
+
+
 	green "======================================================================"
 	green "    Trojan Version: ${trojanVersion} 安装成功!"
 	green "    伪装站点为 http://${configDomainTrojan}!"
@@ -672,8 +681,8 @@ start_menu(){
     red " 5. 卸载v2ray websocket tls1.3"
     green " 6. 安装 trojan + v2ray websocket tls1.3"
     red " 7. 卸载 trojan + v2ray websocket tls1.3"
-    green " 8. 安装 Oh My Zsh , 和插件zsh-autosuggestions"
-    green " 9. 设置时区为北京时间+0800区 这样cron定时脚本安装北京时间运行"
+    green " 8. 安装 Oh My Zsh, 和插件zsh-autosuggestions"
+    green " 9. 设置时区为北京时间+0800区, 这样cron定时脚本按照北京时间运行"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -700,7 +709,7 @@ start_menu(){
     testPortUsage
     ;;
     8)
-    setDateZone
+    installOnMyZsh
     ;;
     9)
     setDateZone
