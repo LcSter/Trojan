@@ -17,11 +17,11 @@ Youtube：波仔分享
 脚本安装命令
 
 ```bash
-curl -O https://raw.githubusercontent.com/V2RaySSR/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
+curl -O https://raw.githubusercontent.com/jinwyp/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
 ```
 
 或
 
 ```bash
-wget --no-check-certificate https://raw.githubusercontent.com/V2RaySSR/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
+wget --no-check-certificate https://raw.githubusercontent.com/jinwyp/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
 ```
