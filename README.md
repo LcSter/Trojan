@@ -18,10 +18,12 @@ Youtube：波仔分享
 
 ```bash
 curl -O https://raw.githubusercontent.com/jinwyp/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
+
 ```
 
 或
 
 ```bash
 wget --no-check-certificate https://raw.githubusercontent.com/jinwyp/Trojan/master/trojan_v2ray_install.sh && chmod +x trojan_v2ray_install.sh && ./trojan_v2ray_install.sh
+
 ```

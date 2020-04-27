@@ -28,25 +28,28 @@ function setDateZone(){
 function installOnMyZsh(){
     testPortUsage
 
+    green "======================="
+    yellow "准备安装 ZSH and oh-my-zsh"
+    green "======================="
+
     if [ "$osRelease" == "centos" ]; then
 
-        echo "Install ZSH and oh-my-zsh"
         sudo $osSystemPackage update && sudo $osSystemPackage install zsh -y
 
     elif [ "$osRelease" == "ubuntu" ]; then
 
-        echo "Install ZSH and oh-my-zsh"
         $osSystemPackage install zsh -y
 
     elif [ "$osRelease" == "debian" ]; then
 
-        echo "Install ZSH and oh-my-zsh"
         $osSystemPackage install zsh -y
     fi
 
     # 安装 oh-my-zsh
     if [[ ! -d "${HOME}/.oh-my-zsh" ]] ;  then
-        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+        curl -Lo ${HOME}/ohmyzsh_install.sh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+        chmod +x ${HOME}/ohmyzsh_install.sh
+        sh ${HOME}/ohmyzsh_install.sh
     fi
 
     if [[ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]] ;  then
@@ -236,8 +239,7 @@ function install_nginx(){
     configLocalIp=`curl ipv4.icanhazip.com`
     if [ $configRealIp == $configLocalIp ] ; then
         green "=========================================="
-        green "  域名解析正常，开始安装 nginx"
-        green "  检测到域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}"
+        green " 域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}. 域名解析正常，开始安装 nginx !"
         green "=========================================="
         sleep 1s
 
@@ -511,15 +513,18 @@ EOF
 
 
 	green "======================================================================"
-	green "    Trojan Version: ${trojanVersion} 安装成功!"
+	green "    Trojan Version: ${trojanVersion} 安装成功 !!"
 	green "    伪装站点为 http://${configDomainTrojan}!"
 	green "    伪装站点的静态html内容放置在目录 ${configTrojanWebsitePath}, 可自行更换网站内容!"
 	red "    nginx 配置在目录 ${nginxConfigPath} !"
 	red "    Trojan 服务器端配置在目录 ${configTrojanPath}/src/server.conf !"
+	green "    trojan 停止命令: systemctl stop trojan.service 启动命令: systemctl start trojan.service"
+	green "    nginx 停止命令: systemctl stop nginx.service 启动命令: systemctl start nginx.service"
+	green "    Trojan 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
 	green "======================================================================"
 	blue  "----------------------------------------"
 	yellow "Trojan 配置信息如下, 请自行复制保存, 密码任选其一 !!"
-	yellow "服务器地址: ${configDomainTrojan}.  端口: 443"
+	yellow "服务器地址: ${configDomainTrojan}  端口: 443"
 	yellow "密码1: ${trojanPassword1}"
 	yellow "密码2: ${trojanPassword2}"
 	yellow "密码3: ${trojanPassword3}"
@@ -649,6 +654,16 @@ function remove_trojan(){
     green "=============="
 }
 
+
+
+
+
+
+
+
+
+
+
 function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
@@ -658,7 +673,11 @@ function bbr_boost_sh(){
 
 
 
-start_menu(){
+
+
+
+
+function start_menu(){
     clear
     green " ===================================="
     green " Trojan V2ray 一键安装自动脚本 2020-2-27 更新  "
@@ -677,12 +696,12 @@ start_menu(){
     red " 2. 卸载 trojan 与 nginx"
     green " 3. 修复证书 并继续安装 trojan 和 nginx"
     green " 4. 安装BBR-PLUS加速4合一脚本"
-    green " 4. 安装v2ray websocket tls1.3"
-    red " 5. 卸载v2ray websocket tls1.3"
-    green " 6. 安装 trojan + v2ray websocket tls1.3"
-    red " 7. 卸载 trojan + v2ray websocket tls1.3"
-    green " 8. 安装 Oh My Zsh, 和插件zsh-autosuggestions"
-    green " 9. 设置时区为北京时间+0800区, 这样cron定时脚本按照北京时间运行"
+    green " 5. 安装v2ray websocket tls1.3"
+    red " 6. 卸载v2ray websocket tls1.3"
+    green " 7. 安装 trojan + v2ray websocket tls1.3"
+    red " 8. 卸载 trojan + v2ray websocket tls1.3"
+    green " 9. 安装 Oh My Zsh, 和插件zsh-autosuggestions"
+    green " 10. 设置时区为北京时间+0800区, 这样cron定时脚本按照北京时间运行"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -709,9 +728,12 @@ start_menu(){
     testPortUsage
     ;;
     8)
-    installOnMyZsh
+    testPortUsage
     ;;
     9)
+    installOnMyZsh
+    ;;
+    10)
     setDateZone
     ;;
     0)
