@@ -553,10 +553,11 @@ EOF
 
 
     # 下载并制作 trojan windows 下命令行启动文件
-    rm -rf ${configTrojanPath}/trojan-win-cli/
+    rm -rf ${configTrojanPath}/trojan-win-cli
 
     wget -O ${configTrojanPath}/trojan-win-cli.zip https://github.com/jinwyp/Trojan/raw/master/trojan-win-cli.zip
     unzip -d ${configTrojanPath} ${configTrojanPath}/trojan-win-cli.zip
+    rm ${configTrojanPath}/trojan-win-cli.zip
 
 	cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
 
