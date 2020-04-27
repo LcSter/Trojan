@@ -18,7 +18,7 @@ bold(){
 }
 
 
-function get_github_latest_release() {
+function getGithubLatestReleaseVersion() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")'
 }
 
@@ -91,10 +91,17 @@ function installOnMyZsh(){
 set fileencodings=utf-8,gb2312,gb18030,gbk,ucs-bom,cp936,latin1
 set enc=utf8
 set fencs=utf8,gbk,gb2312,gb18030
+
+syntax on
+set nu!
+set autoindent
 EOF
     fi
 
+
     # 安装 micro 编辑器
+    mkdir -p ${HOME}/bin
+    cd ${HOME}/bin
     curl https://getmic.ro | bash
 }
 
@@ -375,7 +382,7 @@ function download_trojan_server(){
     trojanPassword10=$(cat /dev/urandom | head -1 | md5sum | head -c 10)
 
     #wget https://github.com/trojan-gfw/trojan/releases/download/v1.15.1/trojan-1.15.1-linux-amd64.tar.xz
-    trojanVersion=get_github_latest_release"trojan-gfw/trojan"
+    trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
     #trojanVersion=$(curl --silent "https://api.github.com/repos/trojan-gfw/trojan/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")')
 
     if [[ -f ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz ]]; then
@@ -390,7 +397,7 @@ function download_trojan_server(){
     green "=========================================="
 
     cd ${configTrojanPath}
-    rm -rf ${configTrojanPath}/src/
+    rm -rf ${configTrojanPath}/*
 
 	wget -O ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz  https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/trojan-${trojanVersion}-linux-amd64.tar.xz
 	tar xf trojan-${trojanVersion}-linux-amd64.tar.xz -C ${configTrojanPath}
@@ -685,67 +692,82 @@ function install_trojan(){
 
 }
 
+
+
 function repair_cert(){
-systemctl stop nginx
-osPort80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
-if [ -n "$osPort80" ]; then
-    process80=`netstat -tlpn | awk -F '[: ]+' '$5=="80"{print $9}'`
-    red "==========================================================="
-    red "检测到80端口被占用，占用进程为：${process80}，本次安装结束"
-    red "==========================================================="
-    exit 1
-fi
-green "======================="
-blue "请输入绑定到本VPS的域名"
-blue "务必与之前失败使用的域名一致"
-green "======================="
-read configDomainTrojan
-configRealIp=`ping ${configDomainTrojan} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
-configLocalIp=`curl ipv4.icanhazip.com`
-if [ $configRealIp == $configLocalIp ] ; then
-    ~/.acme.sh/acme.sh  --issue  -d $configDomainTrojan  --standalone
-    ~/.acme.sh/acme.sh  --installcert  -d  $configDomainTrojan   \
-        --key-file   /usr/src/trojan-cert/private.key \
-        --fullchain-file /usr/src/trojan-cert/fullchain.cer
-    if test -s /usr/src/trojan-cert/fullchain.cer; then
-        green "证书申请成功"
-	green "请将/usr/src/trojan-cert/下的fullchain.cer下载放到客户端trojan-cli文件夹"
-	systemctl restart trojan
-	systemctl start nginx
+    systemctl stop nginx.service
+    testPortUsage
+
+    green "=============================="
+    blue "请输入绑定到本VPS的域名"
+    blue "务必与之前失败使用的域名一致"
+    green "=============================="
+
+    read configDomainTrojan
+    configRealIp=`ping ${configDomainTrojan} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
+    configLocalIp=`curl ipv4.icanhazip.com`
+
+    if [ $configRealIp == $configLocalIp ] ; then
+
+        green "=========================================="
+        green " 域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}. 域名解析正常，开始重新申请证书 !"
+        green "=========================================="
+
+        ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --standalone
+        ~/.acme.sh/acme.sh  --installcert  -d  ${configDomainTrojan}   \
+            --key-file   ${configTrojanCertPath}/private.key \
+            --fullchain-file ${configTrojanCertPath}/fullchain.cer \
+            --reloadcmd  "systemctl force-reload  nginx.service"
+
+        if test -s ${configTrojanCertPath}/fullchain.cer; then
+            green "=========================================="
+            green "       证书获取成功!!"
+            green "=========================================="
+
+            download_trojan_server
+        else
+            red "==================================="
+            red " 申请证书失败!  "
+            red " 请检查域名和DNS是否生效, 稍后再尝试使用修复证书功能 ! "
+            red "==================================="
+        fi
     else
-    	red "申请证书失败"
+        red "================================"
+        red "域名解析地址与本VPS IP地址不一致"
+        red "本次安装失败，请确保域名解析正常"
+        red "================================"
+        exit
     fi
-else
-    red "================================"
-    red "域名解析地址与本VPS IP地址不一致"
-    red "本次安装失败，请确保域名解析正常"
-    red "================================"
-fi	
 }
 
+
+
+
 function remove_trojan(){
-    red "================================"
+    green "================================"
     red "即将卸载trojan"
-    red "同时卸载安装的nginx"
-    red "================================"
+    red "同时卸载已安装的nginx"
+    green "================================"
+    systemctl stop nginx.service
     systemctl stop trojan
     systemctl disable trojan
+
     rm -f ${osSystemmdPath}trojan.service
+    rm -rf ${configTrojanPath}/trojan
+
     if [ "$osRelease" == "centos" ]; then
         yum remove -y nginx
     else
         apt autoremove -y nginx
     fi
-    rm -rf /usr/src/trojan*
-    rm -rf /usr/share/nginx/html/*
-    green "=============="
-    green "trojan删除完毕"
-    green "=============="
+
+    crontab -r
+
+    green "================================"
+    green "  trojan 和 nginx 卸载完毕 !"
+    green "  crontab 定时任务 删除完毕 !"
+    green "================================"
 }
-
-
-
-
 
 
 
@@ -756,9 +778,6 @@ function remove_trojan(){
 function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
-
-
-
 
 
 
@@ -817,7 +836,8 @@ function start_menu(){
     testPortUsage
     ;;
     8)
-    testPortUsage
+    trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
+    echo "${trojanVersion}"
     ;;
     9)
     installOnMyZsh
