@@ -359,7 +359,16 @@ function get_https_certificate(){
     #申请https证书
 	mkdir -p ${configTrojanCertPath}
 	curl https://get.acme.sh | sh
-	~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --webroot ${configTrojanWebsitePath}/
+
+
+	if [[ s1 == "standalone" ]] ; then
+	    green "===== acme.sh standalone mode !"
+	    ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --standalone
+	else
+	    green "===== acme.sh nginx mode !"
+        ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --webroot ${configTrojanWebsitePath}/
+    fi
+
     ~/.acme.sh/acme.sh  --installcert  -d ${configDomainTrojan}   \
         --key-file   ${configTrojanCertPath}/private.key \
         --fullchain-file ${configTrojanCertPath}/fullchain.cer \
@@ -397,7 +406,7 @@ function download_trojan_server(){
     green "=========================================="
 
     cd ${configTrojanPath}
-    rm -rf ${configTrojanPath}/*
+    rm -rf ${configTrojanPath}/src
 
 	wget -O ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz  https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/trojan-${trojanVersion}-linux-amd64.tar.xz
 	tar xf trojan-${trojanVersion}-linux-amd64.tar.xz -C ${configTrojanPath}
@@ -547,6 +556,7 @@ WantedBy=multi-user.target
 EOF
 
 	chmod +x ${osSystemmdPath}trojan.service
+	systemctl daemon-reload
 	systemctl start trojan.service
 	systemctl enable trojan.service
 
@@ -714,11 +724,7 @@ function repair_cert(){
         green " 域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}. 域名解析正常，开始重新申请证书 !"
         green "=========================================="
 
-        ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --standalone
-        ~/.acme.sh/acme.sh  --installcert  -d  ${configDomainTrojan}   \
-            --key-file   ${configTrojanCertPath}/private.key \
-            --fullchain-file ${configTrojanCertPath}/fullchain.cer \
-            --reloadcmd  "systemctl force-reload  nginx.service"
+        get_https_certificate "standalone"
 
         if test -s ${configTrojanCertPath}/fullchain.cer; then
             green "=========================================="
@@ -754,7 +760,7 @@ function remove_trojan(){
     systemctl disable trojan
 
     rm -f ${osSystemmdPath}trojan.service
-    rm -rf ${configTrojanPath}/trojan
+    rm -rf ${configTrojanPath}
 
     if [ "$osRelease" == "centos" ]; then
         yum remove -y nginx
