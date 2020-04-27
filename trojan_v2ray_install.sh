@@ -103,6 +103,8 @@ EOF
     mkdir -p ${HOME}/bin
     cd ${HOME}/bin
     curl https://getmic.ro | bash
+
+    cp ${HOME}/bin/micro /usr/local/bin
 }
 
 
