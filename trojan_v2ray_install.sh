@@ -1,17 +1,20 @@
 #!/bin/bash
 
 # fonts color
+red(){
+    echo -e "\033[31m\033[01m$1\033[0m"
+}
+green(){
+    echo -e "\033[32m\033[01m$1\033[0m"
+}
 yellow(){
     echo -e "\033[33m\033[01m$1\033[0m"
 }
 blue(){
     echo -e "\033[34m\033[01m$1\033[0m"
 }
-green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
-}
-red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
+bold(){
+    echo -e "\033[1m\033[01m$1\033[0m"
 }
 
 
@@ -49,21 +52,34 @@ function installOnMyZsh(){
     if [[ ! -d "${HOME}/.oh-my-zsh" ]] ;  then
         curl -Lo ${HOME}/ohmyzsh_install.sh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
         chmod +x ${HOME}/ohmyzsh_install.sh
-        sh ${HOME}/ohmyzsh_install.sh
+        sh ${HOME}/ohmyzsh_install.sh --unattended
     fi
 
     if [[ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]] ;  then
         git clone "https://github.com/zsh-users/zsh-autosuggestions" "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+
+        # 配置 zshrc 文件
+        zshConfig=${HOME}/.zshrc
+        zshTheme="maran"
+        sed -i 's/ZSH_THEME=.*/ZSH_THEME="'${zshTheme}'"/' $zshConfig
+        sed -i 's/plugins=(git)/plugins=(git cp history z rsync colorize zsh-autosuggestions)/' $zshConfig
+
+        zshAutosuggestionsConfig=${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+        sed -i "s/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=1'/" $zshAutosuggestionsConfig
+
+
+        # Actually change the default shell to zsh
+        zsh=$(which zsh)
+
+        if ! chsh -s "$zsh"; then
+            error "chsh command unsuccessful. Change your default shell manually."
+        else
+            export SHELL="$zsh"
+            green "===== Shell successfully changed to '$zsh'."
+        fi
+
     fi
 
-    # 配置 zshrc 文件
-    zshConfig=${HOME}/.zshrc
-    zshTheme="maran"
-    sed -i 's/ZSH_THEME=.*/ZSH_THEME="'${zshTheme}'"/' $zshConfig
-    sed -i 's/plugins=(git)/plugins=(git cp history z rsync colorize zsh-autosuggestions)/' $zshConfig
-
-    zshAutosuggestionsConfig=${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-    sed -i "s/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'/ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=1'/" $zshAutosuggestionsConfig
 }
 
 
