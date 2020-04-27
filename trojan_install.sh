@@ -172,6 +172,7 @@ EOF
     	unzip web.zip
 	systemctl stop nginx
 	sleep 5
+
 	#申请https证书
 	mkdir /usr/src/trojan-cert /usr/src/trojan-temp
 	curl https://get.acme.sh | sh
@@ -181,23 +182,34 @@ EOF
         --fullchain-file /usr/src/trojan-cert/fullchain.cer
 	if test -s /usr/src/trojan-cert/fullchain.cer; then
 	systemctl start nginx
-        cd /usr/src
+
+
+    cd /usr/src
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
 	wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
 	latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
 	wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
 	tar xf trojan-${latest_version}-linux-amd64.tar.xz
+
+
+
 	#下载trojan WIN客户端
 	wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
 	wget -P /usr/src/trojan-temp https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-win.zip
+
 	unzip trojan-cli.zip
 	unzip /usr/src/trojan-temp/trojan-${latest_version}-win.zip -d /usr/src/trojan-temp/
+
 	cp /usr/src/trojan-cert/fullchain.cer /usr/src/trojan-cli/fullchain.cer
-	mv -f /usr/src/trojan-temp/trojan/trojan.exe /usr/src/trojan-cli/ 
-        #下载trojan MAC客户端
-        wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-macos.zip
-        unzip /usr/src/trojan-macos/trojan-${latest_version}-macos.zip -d /usr/src/trojan-macos/
-        rm -rf /usr/src/trojan-macos/trojan-${latest_version}-macos.zip
+
+	mv -f /usr/src/trojan-temp/trojan/trojan.exe /usr/src/trojan-cli/
+
+    #下载trojan MAC客户端
+    wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-macos.zip
+    unzip /usr/src/trojan-macos/trojan-${latest_version}-macos.zip -d /usr/src/trojan-macos/
+    rm -rf /usr/src/trojan-macos/trojan-${latest_version}-macos.zip
+
+
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
         #配置trojan mac
     cat > /usr/src/trojan-macos/trojan/config.json <<-EOF

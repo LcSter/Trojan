@@ -18,6 +18,10 @@ bold(){
 }
 
 
+function get_github_latest_release() {
+    curl --silent "https://api.github.com/repos/$1/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")'
+}
+
 function setDateZone(){
     if [[ -f /etc/localtime ]] && [[ -f /usr/share/zoneinfo/Asia/Shanghai ]];  then
         mv /etc/localtime /etc/localtime.bak
@@ -78,6 +82,16 @@ function installOnMyZsh(){
             green "===== Shell successfully changed to '$zsh'."
         fi
 
+    fi
+
+
+    # 设置vim 中文乱码
+    if [[ ! -d "${HOME}/.vimrc" ]] ;  then
+        cat > "${nginxConfigPath}" <<-EOF
+set fileencodings=utf-8,gb2312,gb18030,gbk,ucs-bom,cp936,latin1
+set enc=utf8
+set fencs=utf8,gbk,gb2312,gb18030
+EOF
     fi
 
 }
@@ -239,6 +253,9 @@ configTrojanPath="${HOME}/trojan"
 configTrojanLogFile="${HOME}/trojan-access.log"
 configTrojanCertPath="${HOME}/trojan/cert"
 configTrojanWebsitePath="${HOME}/trojan/website/html"
+configTrojanWindowsCliPath=$(cat /dev/urandom | head -1 | md5sum | head -c 16)
+
+
 trojanVersion="1.15.1"
 
 nginxConfigPath="/etc/nginx/nginx.conf"
@@ -258,7 +275,6 @@ function install_nginx(){
         green " 域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}. 域名解析正常，开始安装 nginx !"
         green "=========================================="
         sleep 1s
-
 
         if test -s ${nginxConfigPath}; then
             green "==========================="
@@ -355,7 +371,8 @@ function download_trojan_server(){
     trojanPassword10=$(cat /dev/urandom | head -1 | md5sum | head -c 10)
 
     #wget https://github.com/trojan-gfw/trojan/releases/download/v1.15.1/trojan-1.15.1-linux-amd64.tar.xz
-    trojanVersion=$(curl --silent "https://api.github.com/repos/trojan-gfw/trojan/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")')
+    trojanVersion=get_github_latest_release"trojan-gfw/trojan"
+    #trojanVersion=$(curl --silent "https://api.github.com/repos/trojan-gfw/trojan/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")')
 
     if [[ -f ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz ]]; then
 
@@ -369,11 +386,13 @@ function download_trojan_server(){
     green "=========================================="
 
     cd ${configTrojanPath}
+    rm -rf ${configTrojanPath}/src/
+
 	wget -O ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz  https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/trojan-${trojanVersion}-linux-amd64.tar.xz
 	tar xf trojan-${trojanVersion}-linux-amd64.tar.xz -C ${configTrojanPath}
 	mv ${configTrojanPath}/trojan ${configTrojanPath}/src
 
-    rm -rf ${configTrojanPath}/src/server.conf
+
 	cat > ${configTrojanPath}/src/server.conf <<-EOF
 {
     "run_type": "server",
@@ -519,6 +538,56 @@ EOF
 	chmod +x ${osSystemmdPath}trojan.service
 	systemctl start trojan.service
 	systemctl enable trojan.service
+
+
+
+    # 下载并制作 trojan windows 下命令行启动文件
+    rm -rf ${configTrojanPath}/trojan-win-cli/
+
+    wget -O ${configTrojanPath}/trojan-win-cli.zip https://github.com/jinwyp/Trojan/raw/master/trojan-win-cli.zip
+    unzip -d ${configTrojanPath} ${configTrojanPath}/trojan-win-cli.zip
+
+	cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
+
+    cat > ${configTrojanPath}/trojan-win-cli/config.json <<-EOF
+{
+    "run_type": "client",
+    "local_addr": "127.0.0.1",
+    "local_port": 1080,
+    "remote_addr": "$configDomainTrojan",
+    "remote_port": 443,
+    "password": [
+        "$trojanPassword1"
+    ],
+    "log_level": 1,
+    "ssl": {
+        "verify": true,
+        "verify_hostname": true,
+        "cert": "fullchain.cer",
+        "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
+	    "sni": "",
+        "alpn": [
+            "h2",
+            "http/1.1"
+        ],
+        "reuse_session": true,
+        "session_ticket": false,
+        "curves": ""
+    },
+    "tcp": {
+        "no_delay": true,
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
+    }
+}
+EOF
+    cd ${configTrojanPath}/trojan-win-cli/
+    zip -r trojan-win-cli.zip ${configTrojanPath}/trojan-win-cli/
+    mkdir -p ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
+	mv ${configTrojanPath}/trojan-win-cli/trojan-win-cli.zip ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
+
+
 
 
     # 设置 cron 定时任务
