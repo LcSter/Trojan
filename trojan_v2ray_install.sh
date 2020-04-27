@@ -87,14 +87,18 @@ function installOnMyZsh(){
 
     # 设置vim 中文乱码
     if [[ ! -d "${HOME}/.vimrc" ]] ;  then
-        cat > "${nginxConfigPath}" <<-EOF
+        cat > "${HOME}/.vimrc" <<-EOF
 set fileencodings=utf-8,gb2312,gb18030,gbk,ucs-bom,cp936,latin1
 set enc=utf8
 set fencs=utf8,gbk,gb2312,gb18030
 EOF
     fi
 
+    # 安装 micro 编辑器
+    curl https://getmic.ro | bash
 }
+
+
 
 
 osRelease=""
@@ -168,7 +172,7 @@ function testPortUsage() {
         red "======================================================================="
         red "检测到SELinux为开启强制模式状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
         red "======================================================================="
-        read -p "是否现在重启 ?请输入 [Y/n] :" osSELINUXCheckIsReboot
+        read -p "是否现在重启? 请输入 [Y/n] :" osSELINUXCheckIsReboot
         [ -z "${osSELINUXCheckIsReboot}" ] && osSELINUXCheckIsReboot="y"
 
         if [[ $osSELINUXCheckIsReboot == [Yy] ]]; then
@@ -184,7 +188,7 @@ function testPortUsage() {
         red "======================================================================="
         red "检测到SELinux为宽容模式状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
         red "======================================================================="
-        read -p "是否现在重启 ?请输入 [Y/n] :" osSELINUXCheckIsReboot
+        read -p "是否现在重启? 请输入 [Y/n] :" osSELINUXCheckIsReboot
         [ -z "${osSELINUXCheckIsReboot}" ] && osSELINUXCheckIsReboot="y"
 
         if [[ $osSELINUXCheckIsReboot == [Yy] ]]; then
