@@ -23,16 +23,31 @@ function getGithubLatestReleaseVersion() {
 }
 
 function setDateZone(){
-    if [[ -f /etc/localtime ]] && [[ -f /usr/share/zoneinfo/Asia/Shanghai ]];  then
-        mv /etc/localtime /etc/localtime.bak
-        cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+    green "=================================================="
+    yellow "当前时区为: $(date -R)"
+    yellow "是否设置时区为北京时间 +0800区, 以便cron定时重启脚本按照北京时间运行."
+    green "=================================================="
+    # read 默认值 https://stackoverflow.com/questions/2642585/read-a-variable-in-bash-with-a-default-value
+
+    read -p "是否设置为北京时间 +0800 时区? 请输入[Y/n]?" osTimezone
+    osTimezone=${osTimezone:-Y}
+
+    if [[ $osTimezone == [Yy] ]]; then
+        if [[ -f /etc/localtime ]] && [[ -f /usr/share/zoneinfo/Asia/Shanghai ]];  then
+            mv /etc/localtime /etc/localtime.bak
+            cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+            yellow "设置成功! 当前时区已设置为 $(date -R)"
+            green "=================================================="
+        fi
     fi
 
-    date -R
 }
 
 
 function installOnMyZsh(){
+    setDateZone
     testPortUsage
 
     green "======================="
@@ -262,31 +277,50 @@ configLocalIp=""
 configDomainTrojan=""
 configDomainV2ray=""
 
+configTrojanPasswordPrefix="jin"
 configTrojanPath="${HOME}/trojan"
 configTrojanLogFile="${HOME}/trojan-access.log"
 configTrojanCertPath="${HOME}/trojan/cert"
 configTrojanWebsitePath="${HOME}/trojan/website/html"
-configTrojanWindowsCliPath=$(cat /dev/urandom | head -1 | md5sum | head -c 16)
+configTrojanWindowsCliPath=$(cat /dev/urandom | head -1 | md5sum | head -c 20)
 
 
 trojanVersion="1.15.1"
 
 nginxConfigPath="/etc/nginx/nginx.conf"
 
+function compareRealIpWithLocalIp(){
+
+    if [ -n $1 ]; then
+        configRealIp=`ping $1 -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
+        configLocalIp=`curl ipv4.icanhazip.com`
+
+        if [ $configRealIp == $configLocalIp ] ; then
+            green "=========================================="
+            green " 域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}. 域名解析正常!"
+            green "=========================================="
+            true
+        else
+            red "================================"
+            red "域名解析地址与本VPS IP地址不一致"
+            red "本次安装失败，请确保域名解析正常"
+            red "================================"
+            false
+        fi
+    else
+        false
+    fi
+
+}
 
 function install_nginx(){
 
-
-    green "======================="
-    yellow "请输入绑定到本VPS的域名"
-    green "======================="
+    green "=============================================="
+    yellow "请输入绑定到本VPS的域名 不能使用CDN"
+    green "=============================================="
     read configDomainTrojan
-    configRealIp=`ping ${configDomainTrojan} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
-    configLocalIp=`curl ipv4.icanhazip.com`
-    if [ $configRealIp == $configLocalIp ] ; then
-        green "=========================================="
-        green " 域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}. 域名解析正常，开始安装 nginx !"
-        green "=========================================="
+    if compareRealIpWithLocalIp "${configDomainTrojan}" ; then
+        green "开始安装 nginx !"
         sleep 1s
 
         if test -s ${nginxConfigPath}; then
@@ -345,12 +379,7 @@ EOF
         green "       Web服务器 nginx 安装成功!!"
         green "=========================================="
 
-
     else
-        red "================================"
-        red "域名解析地址与本VPS IP地址不一致"
-        red "本次安装失败，请确保域名解析正常"
-        red "================================"
         exit
     fi
 
@@ -406,6 +435,8 @@ function download_trojan_server(){
     green "=========================================="
     green "       开始安装 Trojan Version: ${trojanVersion} !"
     green "=========================================="
+    read -p "请输入trojan密码的前缀? (会生成若干随机密码和带有指定该前缀的密码)" configTrojanPasswordPrefix
+    configTrojanPasswordPrefix=${configTrojanPasswordPrefix:-jin}
 
     cd ${configTrojanPath}
     rm -rf ${configTrojanPath}/src
@@ -433,77 +464,77 @@ function download_trojan_server(){
         "$trojanPassword8",
         "$trojanPassword9",
         "$trojanPassword10",
-        "jin202000",
-        "jin202030",
-        "jin202031",
-        "jin202032",
-        "jin202033",
-        "jin202034",
-        "jin202035",
-        "jin202036",
-        "jin202037",
-        "jin202038",
-        "jin202039",
-        "jin202040",
-        "jin202041",
-        "jin202042",
-        "jin202043",
-        "jin202044",
-        "jin202045",
-        "jin202046",
-        "jin202047",
-        "jin202048",
-        "jin202049",
-        "jin202050",
-        "jin202051",
-        "jin202052",
-        "jin202053",
-        "jin202054",
-        "jin202055",
-        "jin202056",
-        "jin202057",
-        "jin202058",
-        "jin202059",
-        "jin202060",
-        "jin202061",
-        "jin202062",
-        "jin202063",
-        "jin202064",
-        "jin202065",
-        "jin202066",
-        "jin202067",
-        "jin202068",
-        "jin202069",
-        "jin202070",
-        "jin202071",
-        "jin202072",
-        "jin202073",
-        "jin202074",
-        "jin202075",
-        "jin202076",
-        "jin202077",
-        "jin202078",
-        "jin202079",
-        "jin202080",
-        "jin202081",
-        "jin202082",
-        "jin202083",
-        "jin202084",
-        "jin202085",
-        "jin202086",
-        "jin202087",
-        "jin202088",
-        "jin202089",
-        "jin202090",
-        "jin202091",
-        "jin202092",
-        "jin202093",
-        "jin202094",
-        "jin202095",
-        "jin202096",
-        "jin202097",
-        "jin202098",
-        "jin202099"
+        "$configTrojanPasswordPrefix202000",
+        "$configTrojanPasswordPrefix202030",
+        "$configTrojanPasswordPrefix202031",
+        "$configTrojanPasswordPrefix202032",
+        "$configTrojanPasswordPrefix202033",
+        "$configTrojanPasswordPrefix202034",
+        "$configTrojanPasswordPrefix202035",
+        "$configTrojanPasswordPrefix202036",
+        "$configTrojanPasswordPrefix202037",
+        "$configTrojanPasswordPrefix202038",
+        "$configTrojanPasswordPrefix202039",
+        "$configTrojanPasswordPrefix202040",
+        "$configTrojanPasswordPrefix202041",
+        "$configTrojanPasswordPrefix202042",
+        "$configTrojanPasswordPrefix202043",
+        "$configTrojanPasswordPrefix202044",
+        "$configTrojanPasswordPrefix202045",
+        "$configTrojanPasswordPrefix202046",
+        "$configTrojanPasswordPrefix202047",
+        "$configTrojanPasswordPrefix202048",
+        "$configTrojanPasswordPrefix202049",
+        "$configTrojanPasswordPrefix202050",
+        "$configTrojanPasswordPrefix202051",
+        "$configTrojanPasswordPrefix202052",
+        "$configTrojanPasswordPrefix202053",
+        "$configTrojanPasswordPrefix202054",
+        "$configTrojanPasswordPrefix202055",
+        "$configTrojanPasswordPrefix202056",
+        "$configTrojanPasswordPrefix202057",
+        "$configTrojanPasswordPrefix202058",
+        "$configTrojanPasswordPrefix202059",
+        "$configTrojanPasswordPrefix202060",
+        "$configTrojanPasswordPrefix202061",
+        "$configTrojanPasswordPrefix202062",
+        "$configTrojanPasswordPrefix202063",
+        "$configTrojanPasswordPrefix202064",
+        "$configTrojanPasswordPrefix202065",
+        "$configTrojanPasswordPrefix202066",
+        "$configTrojanPasswordPrefix202067",
+        "$configTrojanPasswordPrefix202068",
+        "$configTrojanPasswordPrefix202069",
+        "$configTrojanPasswordPrefix202070",
+        "$configTrojanPasswordPrefix202071",
+        "$configTrojanPasswordPrefix202072",
+        "$configTrojanPasswordPrefix202073",
+        "$configTrojanPasswordPrefix202074",
+        "$configTrojanPasswordPrefix202075",
+        "$configTrojanPasswordPrefix202076",
+        "$configTrojanPasswordPrefix202077",
+        "$configTrojanPasswordPrefix202078",
+        "$configTrojanPasswordPrefix202079",
+        "$configTrojanPasswordPrefix202080",
+        "$configTrojanPasswordPrefix202081",
+        "$configTrojanPasswordPrefix202082",
+        "$configTrojanPasswordPrefix202083",
+        "$configTrojanPasswordPrefix202084",
+        "$configTrojanPasswordPrefix202085",
+        "$configTrojanPasswordPrefix202086",
+        "$configTrojanPasswordPrefix202087",
+        "$configTrojanPasswordPrefix202088",
+        "$configTrojanPasswordPrefix202089",
+        "$configTrojanPasswordPrefix202090",
+        "$configTrojanPasswordPrefix202091",
+        "$configTrojanPasswordPrefix202092",
+        "$configTrojanPasswordPrefix202093",
+        "$configTrojanPasswordPrefix202094",
+        "$configTrojanPasswordPrefix202095",
+        "$configTrojanPasswordPrefix202096",
+        "$configTrojanPasswordPrefix202097",
+        "$configTrojanPasswordPrefix202098",
+        "$configTrojanPasswordPrefix202099"
     ],
     "log_level": 1,
     "ssl": {
@@ -549,7 +580,7 @@ After=network.target
 Type=simple
 PIDFile=${configTrojanPath}/src/trojan.pid
 ExecStart=${configTrojanPath}/src/trojan -l $configTrojanLogFile -c "${configTrojanPath}/src/server.conf"
-ExecReload=/bin/kill -HUP $MAINPID
+ExecReload=/bin/kill -HUP \$MAINPID
 ExecStop=${configTrojanPath}/src/trojan
 PrivateTmp=true
 
@@ -566,10 +597,16 @@ EOF
 
     # 下载并制作 trojan windows 下命令行启动文件
     rm -rf ${configTrojanPath}/trojan-win-cli
+    rm -rf ${configTrojanPath}/trojan-win-cli-temp
 
     wget -O ${configTrojanPath}/trojan-win-cli.zip https://github.com/jinwyp/Trojan/raw/master/trojan-win-cli.zip
     unzip -d ${configTrojanPath} ${configTrojanPath}/trojan-win-cli.zip
     rm ${configTrojanPath}/trojan-win-cli.zip
+
+    mkdir ${configTrojanPath}/trojan-win-cli-temp
+    wget -P ${configTrojanPath}/trojan-win-cli-temp https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/trojan-${trojanVersion}-win.zip
+    unzip -d ${configTrojanPath}/trojan-win-cli-temp ${configTrojanPath}/trojan-win-cli-temp/trojan-${latest_version}-win.zip
+    mv -f ${configTrojanPath}/trojan-win-cli-temp/trojan/trojan.exe ${configTrojanPath}/trojan-win-cli/
 
 	cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
 
@@ -625,8 +662,10 @@ EOF
 	green "    Trojan Version: ${trojanVersion} 安装成功 !!"
 	green "    伪装站点为 http://${configDomainTrojan}!"
 	green "    伪装站点的静态html内容放置在目录 ${configTrojanWebsitePath}, 可自行更换网站内容!"
-	red "    nginx 配置在目录 ${nginxConfigPath} !"
-	red "    Trojan 服务器端配置在目录 ${configTrojanPath}/src/server.conf !"
+	red "    nginx 配置路径 ${nginxConfigPath} !"
+	red "    nginx 访问日志 /root/nginx-trojan-access.log !"
+	red "    Trojan 服务器端配置路径 ${configTrojanPath}/src/server.conf !"
+	red "    Trojan 访问日志 ${configTrojanLogFile} !"
 	green "    trojan 停止命令: systemctl stop trojan.service 启动命令: systemctl start trojan.service"
 	green "    nginx 停止命令: systemctl stop nginx.service 启动命令: systemctl start nginx.service"
 	green "    Trojan 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
@@ -644,11 +683,14 @@ EOF
 	yellow "密码8: ${trojanPassword8}"
 	yellow "密码9: ${trojanPassword9}"
 	yellow "密码10: ${trojanPassword10}"
+	yellow "您指定前缀的密码若干: 从 ${configTrojanPasswordPrefix}202030 到 ${configTrojanPasswordPrefix}202099 都可以使用"
 	blue  "----------------------------------------"
 	green "======================================================================"
 	green "请下载相应的trojan客户端:"
 	yellow "1 Windows 客户端下载：http://${configDomainTrojan}/download/trojan-windows.zip"
 	yellow "  Windows 客户端另一个版本下载：http://${configDomainTrojan}/download/Trojan-Qt5-windows.zip"
+	yellow "  Windows 客户端命令行版本下载：http://${configDomainTrojan}/${configTrojanWindowsCliPath}/trojan-win-cli.zip"
+	yellow "  Windows 客户端命令行版本需要搭配浏览器插件使用，例如switchyomega等! 具体请看 https://www.atrandys.com/2019/1963.html"
     yellow "2 MacOS 客户端下载：http://${configDomainTrojan}/download/trojan-mac.zip"
     yellow "  MacOS 客户端另一个版本下载：http://${configDomainTrojan}/download/Trojan-Qt5-macos.zip"
     yellow "3 Android 客户端下载 https://github.com/trojan-gfw/igniter/releases "
@@ -682,7 +724,11 @@ EOF
 
 
 function install_trojan(){
-    systemctl stop nginx.service
+    nginx_status=`ps -aux | grep "nginx: worker" | grep -v "grep"`
+    if [ -n "$nginx_status" ]; then
+        systemctl stop nginx.service
+    fi
+
     testPortUsage
     install_nginx
     get_https_certificate
@@ -712,20 +758,14 @@ function repair_cert(){
     testPortUsage
 
     green "=============================="
-    blue "请输入绑定到本VPS的域名"
+    blue "请输入绑定到本VPS的域名 不能使用CDN"
     blue "务必与之前失败使用的域名一致"
     green "=============================="
 
     read configDomainTrojan
-    configRealIp=`ping ${configDomainTrojan} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
-    configLocalIp=`curl ipv4.icanhazip.com`
+    if compareRealIpWithLocalIp "${configDomainTrojan}" ; then
 
-    if [ $configRealIp == $configLocalIp ] ; then
-
-        green "=========================================="
-        green " 域名解析地址为 ${configRealIp}, 本VPS的IP为 ${configLocalIp}. 域名解析正常，开始重新申请证书 !"
-        green "=========================================="
-
+        green "开始重新申请证书 !"
         get_https_certificate "standalone"
 
         if test -s ${configTrojanCertPath}/fullchain.cer; then
@@ -741,10 +781,6 @@ function repair_cert(){
             red "==================================="
         fi
     else
-        red "================================"
-        red "域名解析地址与本VPS IP地址不一致"
-        red "本次安装失败，请确保域名解析正常"
-        red "================================"
         exit
     fi
 }
@@ -761,14 +797,16 @@ function remove_trojan(){
     systemctl stop trojan
     systemctl disable trojan
 
-    rm -f ${osSystemmdPath}trojan.service
-    rm -rf ${configTrojanPath}
 
     if [ "$osRelease" == "centos" ]; then
         yum remove -y nginx
     else
         apt autoremove -y nginx
     fi
+
+    rm -f ${osSystemmdPath}trojan.service
+    rm -rf ${configTrojanPath}
+    rm -rf /root/.acme.sh/
 
     crontab -r
 
@@ -809,60 +847,56 @@ function start_menu(){
     red " *若是已安装trojan或第二次使用脚本，请先执行卸载trojan"
     green " ======================================="
     echo
-    green " 1. 安装 trojan 和 nginx"
-    red " 2. 卸载 trojan 与 nginx"
-    green " 3. 修复证书 并继续安装 trojan 和 nginx"
-    green " 4. 安装BBR-PLUS加速4合一脚本"
-    green " 5. 安装v2ray websocket tls1.3"
-    red " 6. 卸载v2ray websocket tls1.3"
-    green " 7. 安装 trojan + v2ray websocket tls1.3"
-    red " 8. 卸载 trojan + v2ray websocket tls1.3"
-    green " 9. 安装 Oh My Zsh, 和插件zsh-autosuggestions"
-    green " 10. 设置时区为北京时间+0800区, 这样cron定时脚本按照北京时间运行"
+    green " 1. 安装BBR-PLUS加速4合一脚本"
+    green " 2. 安装 trojan 和 nginx"
+    red " 3. 卸载 trojan 与 nginx"
+    green " 4. 修复证书 并继续安装 trojan 和 nginx"
+    green " 5. 安装v2ray 和 caddy, 支持 websocket tls1.3 和CDN"
+    red " 6. 卸载v2ray 和 caddy"
+    green " 7. 同时安装 trojan + v2ray 和 nginx, 注:不支持CDN"
+    red " 8. 卸载 trojan + v2ray 和 nginx"
+    green " 9. 安装 Oh My Zsh 与插件zsh-autosuggestions 等软件"
     blue " 0. 退出脚本"
     echo
-    read -p "请输入数字:" num
-    case "$num" in
-    1)
-    install_trojan
-    ;;
-    2)
-    remove_trojan 
-    ;;
-    3)
-    repair_cert 
-    ;;
-    4)
-    bbr_boost_sh 
-    ;;
-    5)
-    testPortUsage
-    ;;
-    6)
-    setDateZone
-    ;;
-    7)
-    testPortUsage
-    ;;
-    8)
-    trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
-    echo "${trojanVersion}"
-    ;;
-    9)
-    installOnMyZsh
-    ;;
-    10)
-    setDateZone
-    ;;
-    0)
-    exit 1
-    ;;
-    *)
-    clear
-    red "请输入正确数字"
-    sleep 1s
-    start_menu
-    ;;
+    read -p "请输入数字:" menuInputNumber
+    case "$menuInputNumber" in
+        1 )
+            bbr_boost_sh
+        ;;
+        2 )
+            install_trojan
+        ;;
+        3 )
+            remove_trojan
+        ;;
+        4 )
+            repair_cert
+        ;;
+        5 )
+            testPortUsage
+        ;;
+        6 )
+            setDateZone
+        ;;
+        7 )
+            testPortUsage
+        ;;
+        8 )
+            trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
+            echo "${trojanVersion}"
+        ;;
+        9 )
+            installOnMyZsh
+        ;;
+        0 )
+            exit 1
+        ;;
+        * )
+            clear
+            red "请输入正确数字"
+            sleep 1s
+            start_menu
+        ;;
     esac
 }
 
