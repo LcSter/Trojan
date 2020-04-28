@@ -387,7 +387,7 @@ EOF
 
 function get_https_certificate(){
 
-    #申请https证书
+    # 申请https证书
 	mkdir -p ${configTrojanCertPath}
 	curl https://get.acme.sh | sh
 
@@ -696,8 +696,8 @@ EOF
 	red "    nginx 访问日志 /root/nginx-trojan-access.log !"
 	red "    Trojan 服务器端配置路径 ${configTrojanPath}/src/server.conf !"
 	red "    Trojan 访问日志 ${configTrojanLogFile} !"
-	green "    trojan 停止命令: systemctl stop trojan.service 启动命令: systemctl start trojan.service"
-	green "    nginx 停止命令: systemctl stop nginx.service 启动命令: systemctl start nginx.service"
+	green "    trojan 停止命令: systemctl stop trojan.service  启动命令: systemctl start trojan.service  重启命令: systemctl restart trojan.service"
+	green "    nginx 停止命令: systemctl stop nginx.service  启动命令: systemctl start nginx.service  重启命令: systemctl restart nginx.service"
 	green "    Trojan 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
 	green "======================================================================"
 	blue  "----------------------------------------"
@@ -854,11 +854,28 @@ function remove_trojan(){
 
 function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
+
 }
 
 
 
 
+function vps_superspeed(){
+	bash <(curl -Lso- https://git.io/superspeed)
+	wget -N --no-check-certificate https://raw.githubusercontent.com/ernisn/superspeed/master/superspeed.sh && chmod +x superspeed.sh && ./superspeed.sh
+}
+
+function vps_zbench(){
+	wget -N --no-check-certificate https://raw.githubusercontent.com/FunctionClub/ZBench/master/ZBench-CN.sh && chmod +x ZBench-CN.sh && ./ZBench-CN.sh
+}
+
+function vps_testrace(){
+	wget -N --no-check-certificate https://raw.githubusercontent.com/nanqinlang-script/testrace/master/testrace.sh && chmod +x testrace.sh && ./testrace.sh
+}
+
+function vps_LemonBench(){
+    wget -O LemonBench.sh -N --no-check-certificate https://ilemonra.in/LemonBenchIntl && chmod +x LemonBench.sh && ./LemonBench.sh fast
+}
 
 
 
@@ -868,7 +885,7 @@ function start_menu(){
     green " Trojan V2ray 一键安装自动脚本 2020-2-27 更新  "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
     green " 网站：www.v2rayssr.com （已开启禁止国内访问）"
-    green " 此脚本为 atrandys 的，波仔集成BBRPLUS加速及MAC客户端 "
+    green " 此脚本为 atrandys 的，波仔集成BBRPLUS加速及客户端 "
     green " Youtube：波仔分享                "
     green " ===================================="
     blue " 声明："
@@ -886,6 +903,14 @@ function start_menu(){
     green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
     red " 8. 卸载 trojan + v2ray 和 nginx"
     green " 9. 安装 Oh My Zsh 与插件zsh-autosuggestions 等软件"
+    green " ======================================="
+    echo
+    green " 下面是 VPS 测网速工具"
+    red " 脚本测速会大量消耗 VPS 流量，请悉知！"
+    blue " 21. superspeed 三网纯测速 （全国各地三大运营商部分节点全面测速）"
+    blue " 22. ZBench 综合网速测试  （包含节点测速, Ping 以及 路由测试）"
+	blue " 23. testrace 回程路由  （四网路由测试）"
+	blue " 24. LemonBench 快速全方位测试 （包含CPU内存性能、回程、速度）"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" menuInputNumber
@@ -918,6 +943,18 @@ function start_menu(){
         9 )
             installOnMyZsh
         ;;
+        21 )
+            vps_superspeed
+        ;;
+        22 )
+            vps_zbench
+        ;;
+        23 )
+            vps_testrace
+        ;;
+        24 )
+            vps_LemonBench
+        ;;
         0 )
             exit 1
         ;;
@@ -932,4 +969,5 @@ function start_menu(){
 
 
 getLinuxOSVersion
+$osSystemPackage -y install wget curl
 start_menu
