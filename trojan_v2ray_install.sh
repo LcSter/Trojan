@@ -50,9 +50,9 @@ function installOnMyZsh(){
     setDateZone
     testPortUsage
 
-    green "======================="
+    green "=============================="
     yellow "准备安装 ZSH and oh-my-zsh"
-    green "======================="
+    green "=============================="
 
     if [ "$osRelease" == "centos" ]; then
 
@@ -391,8 +391,7 @@ function get_https_certificate(){
 	mkdir -p ${configTrojanCertPath}
 	curl https://get.acme.sh | sh
 
-
-	if [[ s1 == "standalone" ]] ; then
+	if [[ $1 == "standalone" ]] ; then
 	    green "===== acme.sh standalone mode !"
 	    ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --standalone
 	else
