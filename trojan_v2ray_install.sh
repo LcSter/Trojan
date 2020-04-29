@@ -275,7 +275,8 @@ function testPortUsage() {
 configRealIp=""
 configLocalIp=""
 configDomainTrojan=""
-configDomainV2ray=""
+
+nginxConfigPath="/etc/nginx/nginx.conf"
 
 configTrojanPasswordPrefix="jin"
 configTrojanPath="${HOME}/trojan"
@@ -283,11 +284,27 @@ configTrojanLogFile="${HOME}/trojan-access.log"
 configTrojanCertPath="${HOME}/trojan/cert"
 configTrojanWebsitePath="${HOME}/trojan/website/html"
 configTrojanWindowsCliPath=$(cat /dev/urandom | head -1 | md5sum | head -c 20)
-
-
 trojanVersion="1.15.1"
 
-nginxConfigPath="/etc/nginx/nginx.conf"
+
+
+
+configDomainV2ray=""
+
+caddyConfigPath="/etc/caddy/"
+caddyConfigFile="/etc/caddy/Caddyfile"
+
+configV2rayBinPath="/usr/bin/v2ray"
+configV2rayDefaultConfigPath="/etc/v2ray"
+configV2rayDefaultConfigFile="/etc/v2ray/config.json"
+
+configV2rayPath="${HOME}/v2ray"
+configV2rayLogFile="${HOME}/v2ray-access.log"
+configV2rayLogErrorFile="${HOME}/v2ray-error.log"
+configV2rayWebsitePath="${HOME}/v2ray/website/html"
+configV2rayWebSocketPath=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
+configV2rayPort="$(($RANDOM + 10000))"
+v2rayVersion="4.23.1"
 
 function compareRealIpWithLocalIp(){
 
@@ -316,25 +333,23 @@ function compareRealIpWithLocalIp(){
 function install_nginx(){
 
     green "=============================================="
-    yellow "请输入绑定到本VPS的域名 不能使用CDN"
+    yellow "   开始安装 Web服务器 nginx !"
     green "=============================================="
-    read configDomainTrojan
-    if compareRealIpWithLocalIp "${configDomainTrojan}" ; then
-        green "开始安装 nginx !"
-        sleep 1s
 
-        if test -s ${nginxConfigPath}; then
-            green "==========================="
-            green "      Nginx 已存在, 退出安装!"
-            green "==========================="
-            exit
-        fi
+    sleep 1s
 
-        $osSystemPackage install nginx -y
-        systemctl enable nginx.service
-        systemctl stop nginx.service
+    if test -s ${nginxConfigPath}; then
+        green "==========================="
+        green "      Nginx 已存在, 退出安装!"
+        green "==========================="
+        exit
+    fi
 
-        cat > "${nginxConfigPath}" <<-EOF
+    $osSystemPackage install nginx -y
+    systemctl enable nginx.service
+    systemctl stop nginx.service
+
+    cat > "${nginxConfigPath}" <<-EOF
 user  root;
 worker_processes  1;
 error_log  /var/log/nginx/error.log warn;
@@ -364,26 +379,22 @@ http {
 }
 EOF
 
-        # 下载伪装站点 并设置伪装网站
-        rm -rf ${configTrojanWebsitePath}/*
-        mkdir -p ${configTrojanWebsitePath}
-        wget -O ${configTrojanPath}/website/trojan_website.zip https://github.com/jinwyp/Trojan/raw/master/web.zip
-        unzip -d ${configTrojanWebsitePath} ${configTrojanPath}/website/trojan_website.zip
+    # 下载伪装站点 并设置伪装网站
+    rm -rf ${configTrojanWebsitePath}/*
+    mkdir -p ${configTrojanWebsitePath}
+    wget -O ${configTrojanPath}/website/trojan_website.zip https://github.com/jinwyp/Trojan/raw/master/web.zip
+    unzip -d ${configTrojanWebsitePath} ${configTrojanPath}/website/trojan_website.zip
 
-        wget -O ${configTrojanPath}/website/trojan_client_all.zip https://github.com/jinwyp/Trojan/raw/master/trojan_client_all.zip
-        unzip -d ${configTrojanWebsitePath} ${configTrojanPath}/website/trojan_client_all.zip
+    wget -O ${configTrojanPath}/website/trojan_client_all.zip https://github.com/jinwyp/Trojan/raw/master/trojan_client_all.zip
+    unzip -d ${configTrojanWebsitePath} ${configTrojanPath}/website/trojan_client_all.zip
 
-        systemctl start nginx.service
+    systemctl start nginx.service
 
-        green "=========================================="
-        green "       Web服务器 nginx 安装成功!!"
-        green "=========================================="
-
-    else
-        exit
-    fi
-
+    green "=========================================="
+    green "       Web服务器 nginx 安装成功!!"
+    green "=========================================="
 }
+
 
 function get_https_certificate(){
 
@@ -391,11 +402,13 @@ function get_https_certificate(){
 	mkdir -p ${configTrojanCertPath}
 	curl https://get.acme.sh | sh
 
+    green "=========================================="
+
 	if [[ $1 == "standalone" ]] ; then
-	    green "===== acme.sh standalone mode !"
+	    green "  开始第一次申请证书 acme.sh standalone mode !"
 	    ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --standalone
 	else
-	    green "===== acme.sh nginx mode !"
+	    green "  开始重新申请证书 acme.sh nginx mode !"
         ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --webroot ${configTrojanWebsitePath}/
     fi
 
@@ -407,7 +420,7 @@ function get_https_certificate(){
 }
 
 
-function download_trojan_server(){
+function download_and_install_trojan_server(){
 
     trojanPassword1=$(cat /dev/urandom | head -1 | md5sum | head -c 10)
     trojanPassword2=$(cat /dev/urandom | head -1 | md5sum | head -c 10)
@@ -625,7 +638,7 @@ EOF
 
 
 
-    # 下载并制作 trojan windows 下命令行启动文件
+    # 下载并制作 trojan windows 客户端的命令行启动文件
     rm -rf ${configTrojanPath}/trojan-win-cli
     rm -rf ${configTrojanPath}/trojan-win-cli-temp
 
@@ -753,69 +766,57 @@ EOF
 
 
 
-function install_trojan(){
+function installTrojanWholeProcess(){
     nginx_status=`ps -aux | grep "nginx: worker" | grep -v "grep"`
     if [ -n "$nginx_status" ]; then
         systemctl stop nginx.service
     fi
 
     testPortUsage
-    install_nginx
-    get_https_certificate
 
-    if test -s ${configTrojanCertPath}/fullchain.cer; then
-        green "=========================================="
-        green "       证书获取成功!!"
-        green "=========================================="
-
-        download_trojan_server
-
-	else
-        red "==================================="
-        red "https证书没有申请成果，自动安装失败"
-        green "不要担心，你可以手动修复证书申请"
-        green "1. 重启VPS"
-        green "2. 重新执行脚本，使用修复证书功能"
-        red "==================================="
-	fi
-
-}
-
-
-
-function repair_cert(){
-    systemctl stop nginx.service
-    testPortUsage
-
-    green "=============================="
-    blue "请输入绑定到本VPS的域名 不能使用CDN"
-    blue "务必与之前失败使用的域名一致"
-    green "=============================="
+    green "=============================================="
+    yellow "请输入绑定到本VPS的域名 不能使用CDN"
+    if [[ $1 == "repair" ]] ; then
+        blue "务必与之前失败使用的域名一致"
+    fi
+    green "=============================================="
 
     read configDomainTrojan
     if compareRealIpWithLocalIp "${configDomainTrojan}" ; then
 
-        green "开始重新申请证书 !"
-        get_https_certificate "standalone"
+        if [[ -z $1 ]] ; then
+            install_nginx
+            get_https_certificate
+        else
+            get_https_certificate "standalone"
+        fi
 
         if test -s ${configTrojanCertPath}/fullchain.cer; then
             green "=========================================="
             green "       证书获取成功!!"
             green "=========================================="
-
-            download_trojan_server
+            download_and_install_trojan_server
         else
             red "==================================="
-            red " 申请证书失败!  "
-            red " 请检查域名和DNS是否生效, 稍后再尝试使用修复证书功能 ! "
+            red " https证书没有申请成功，安装失败!"
+            red " 请检查域名和DNS是否生效, 同一域名请不要一天内多次申请!"
+            red " 请检查80和443端口是否开启, VPS服务商可能需要添加额外防火墙规则，例如阿里云、谷歌云等!"
+            red " 重启VPS, 重新执行脚本, 可选择重新申请证书选项再次申请证书 ! "
+            red " 参考 https://www.atrandys.com/2020/2429.html "
+            red " 参考 https://www.v2rayssr.com/trojan-2.html "
             red "==================================="
+            exit
         fi
     else
         exit
     fi
+
 }
 
 
+function repair_cert(){
+    installTrojanWholeProcess "repair"
+}
 
 
 function remove_trojan(){
@@ -849,8 +850,282 @@ function remove_trojan(){
 
 
 
+function install_caddy(){
+    nginx_status=`ps -aux | grep "nginx: worker" | grep -v "grep"`
+    if [ -n "$nginx_status" ]; then
+        systemctl stop nginx.service
+    fi
+    if [[ -f "${osSystemmdPath}trojan.service" ]] ; then
+        systemctl stop trojan.service
+    fi
+
+    testPortUsage
+
+    green "=============================================="
+    yellow "请输入绑定到本VPS的域名 请不要使用CDN !"
+    yellow "全部安装完毕后可以开启CDN."
+    green "=============================================="
+
+    read configDomainV2ray
+    if compareRealIpWithLocalIp "${configDomainV2ray}" ; then
+
+        green "=========================================="
+	    green "          开始安装 Caddy web服务器 !"
+	    green "=========================================="
+
+        curl https://getcaddy.com | bash -s personal
+
+        groupadd --system caddy
+        useradd --system \
+            --gid caddy \
+            --create-home \
+            --home-dir /var/lib/caddy \
+            --shell /usr/sbin/nologin \
+            --comment "Caddy web server" \
+            caddy
+
+        mkdir "${caddyConfigPath}"
+        touch "${caddyConfigFile}"
+        chown -R root:caddy $caddyConfigPath
+
+        cat > "${caddyConfigFile}" <<-EOF
+$configDomainV2ray
+{
+  root $configV2rayWebsitePath
+  proxy /$configV2rayWebSocketPath localhost:$configV2rayPort {
+    websocket
+    header_upstream -Origin
+  }
+}
+EOF
+
+        # 下载伪装站点 并设置伪装网站
+        rm -rf ${configV2rayWebsitePath}/*
+        mkdir -p ${configV2rayWebsitePath}
+        wget -O ${configV2rayPath}/website/v2ray_website.zip https://github.com/jinwyp/Trojan/raw/master/web.zip
+        unzip -d ${configV2rayWebsitePath} ${configV2rayPath}/website/v2ray_website.zip
+
+        chown -R root:caddy ${configV2rayWebsitePath}
+
+        # 增加启动脚本
+        # https://github.com/caddyserver/dist/blob/master/init/caddy.service
+
+        cat > ${osSystemmdPath}caddy.service <<-EOF
+[Unit]
+Description=Caddy
+Documentation=https://caddyserver.com/docs/
+After=network.target
+
+[Service]
+User=caddy
+Group=caddy
+ExecStart=/usr/local/bin/caddy run --environ --config ${caddyConfigFile}
+ExecReload=/usr/local/bin/caddy reload --config ${caddyConfigFile}
+TimeoutStopSec=5s
+LimitNOFILE=1048576
+LimitNPROC=512
+PrivateTmp=true
+ProtectSystem=full
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+        chmod +x ${osSystemmdPath}caddy.service
+        systemctl daemon-reload
+        systemctl enable caddy.service
+        systemctl start caddy.service
+
+        green "=========================================="
+        green "       Web服务器 Caddy 安装成功!!"
+        green "=========================================="
+    else
+        exit
+    fi
+
+}
 
 
+
+function install_v2ray(){
+
+    v2rayPassword1=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword2=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword3=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword4=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword5=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword6=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword7=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword8=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword9=$(cat /proc/sys/kernel/random/uuid)
+    v2rayPassword10=$(cat /proc/sys/kernel/random/uuid)
+
+    if [[ -f ${osSystemmdPath}v2ray.service ]]; then
+        green "=========================================="
+        green "  已安装过 V2ray, 退出安装 !"
+        green "=========================================="
+        exit
+    fi
+
+    green "=========================================="
+    green "      开始安装 V2ray !"
+    green "=========================================="
+
+    v2rayVersion=$(getGithubLatestReleaseVersion "v2ray/v2ray-core")
+    bash <(curl -L -s https://install.direct/go.sh)
+
+    mkdir -p ${configV2rayPath}/
+    cd ${configV2rayPath}
+
+    cat > ${configV2rayDefaultConfigFile} <<-EOF
+{
+  "log" : {
+    "access": "$configV2rayLogFile",
+    "error": "$configV2rayLogErrorFile",
+    "loglevel": "warning"
+  },
+  "inbound": {
+    "port": $configV2rayPort,
+    "listen":"127.0.0.1",
+    "protocol": "vmess",
+    "settings": {
+      "clients": [
+        {
+          "id": "$v2rayPassword1",
+          "level": 1,
+          "alterId": 64,
+          "email": "password11@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword2",
+          "level": 1,
+          "alterId": 64,
+          "email": "password12@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword3",
+          "level": 1,
+          "alterId": 64,
+          "email": "password13@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword4",
+          "level": 1,
+          "alterId": 64,
+          "email": "password14@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword5",
+          "level": 1,
+          "alterId": 64,
+          "email": "password15@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword6",
+          "level": 1,
+          "alterId": 64,
+          "email": "password16@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword7",
+          "level": 1,
+          "alterId": 64,
+          "email": "password17@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword8",
+          "level": 1,
+          "alterId": 64,
+          "email": "password18@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword9",
+          "level": 1,
+          "alterId": 64,
+          "email": "password19@gmail.com"
+        },
+        {
+          "id": "$v2rayPassword10",
+          "level": 1,
+          "alterId": 64,
+          "email": "password20@gmail.com"
+        }
+      ]
+    },
+    "streamSettings": {
+      "network": "ws",
+      "wsSettings": {
+        "path": "/$configV2rayWebSocketPath"
+      }
+    }
+  },
+  "outbound": {
+    "protocol": "freedom",
+    "settings": {}
+  }
+}
+EOF
+
+
+
+    cat > ${configV2rayPath}/clientConfig.json <<-EOF
+===========客户端配置参数=============
+{
+地址：${configDomainV2ray}
+端口：443
+uuid：${v2rayPassword1}
+额外id：64
+加密方式：aes-128-gcm
+传输协议：ws
+别名：自己起个任意名称
+路径：${configV2rayWebSocketPath}
+底层传输：tls
+}
+EOF
+
+
+    systemctl restart v2ray.service
+    systemctl restart caddy.service
+
+    # 设置 cron 定时任务
+    # https://stackoverflow.com/questions/610839/how-can-i-programmatically-create-a-new-cron-job
+
+    (crontab -l ; echo "20 4 * * 0,1,2,3,4,5,6 systemctl restart v2ray.service") | sort - | uniq - | crontab -
+
+
+    green "======================================================================"
+	green "    V2ray Version: ${v2rayVersion} 安装成功  支持CDN !!"
+	green "    伪装站点为 https://${configDomainV2ray}!"
+	green "    伪装站点的静态html内容放置在目录 ${configV2rayWebsitePath}, 可自行更换网站内容!"
+	red "    caddy 配置路径 ${caddyConfigFile} !"
+	red "    caddy 访问日志 /root/caddy-v2ray-access.log !"
+	red "    V2ray 服务器端配置路径 ${configV2rayDefaultConfigFile} !"
+	red "    V2ray 访问日志 ${configV2rayLogFile} !"
+	red "    V2ray 访问错误日志 ${configV2rayLogErrorFile} !"
+	green "    V2ray 停止命令: systemctl stop v2ray.service  启动命令: systemctl start v2ray.service  重启命令: systemctl restart v2ray.service"
+	green "    caddy 停止命令: systemctl stop caddy.service  启动命令: systemctl start caddy.service  重启命令: systemctl restart caddy.service"
+	green "    V2ray 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
+	green "======================================================================"
+	blue  "----------------------------------------"
+	yellow "V2ray 配置信息如下, 请自行复制保存, 密码任选其一 !!"
+	yellow "服务器地址: ${configDomainV2ray}  端口: 443"
+	yellow "密码1: ${v2rayPassword1}"
+	yellow "密码2: ${v2rayPassword2}"
+	yellow "密码3: ${v2rayPassword3}"
+	yellow "密码4: ${v2rayPassword4}"
+	yellow "密码5: ${v2rayPassword5}"
+	yellow "密码6: ${v2rayPassword6}"
+	yellow "密码7: ${v2rayPassword7}"
+	yellow "密码8: ${v2rayPassword8}"
+	yellow "密码9: ${v2rayPassword9}"
+	yellow "密码10: ${v2rayPassword10}"
+
+	cat "${configV2rayPath}/clientConfig.json"
+	blue  "----------------------------------------"
+	green "======================================================================"
+
+}
 
 function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
@@ -882,11 +1157,10 @@ function vps_LemonBench(){
 function start_menu(){
     clear
     green " ===================================="
-    green " Trojan V2ray 一键安装自动脚本 2020-2-27 更新  "
+    green " Trojan V2ray 一键安装自动脚本 2020-4-29 更新  "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
     green " 网站：www.v2rayssr.com （已开启禁止国内访问）"
-    green " 此脚本为 atrandys 的，波仔集成BBRPLUS加速及客户端 "
-    green " Youtube：波仔分享                "
+    green " 此脚本集成于 atrandys 和 波仔 "
     green " ===================================="
     blue " 声明："
     red " *请不要在任何生产环境使用此脚本"
@@ -894,12 +1168,12 @@ function start_menu(){
     red " *若是已安装trojan或第二次使用脚本，请先执行卸载trojan"
     green " ======================================="
     echo
-    green " 1. 安装BBR-PLUS加速4合一脚本"
+    green " 1. 安装 BBR-PLUS 加速4合一脚本"
     green " 2. 安装 trojan 和 nginx 不支持CDN"
     red " 3. 卸载 trojan 与 nginx"
-    green " 4. 修复证书 并继续安装 trojan 和 nginx"
-    green " 5. 安装v2ray 和 caddy, 支持 websocket tls1.3, 支持CDN"
-    red " 6. 卸载v2ray 和 caddy"
+    green " 4. 修复证书 并继续安装 trojan"
+    green " 5. 安装 v2ray 和 Caddy, 支持 websocket tls1.3, 支持CDN"
+    red " 6. 卸载v2ray 和 Caddy"
     green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
     red " 8. 卸载 trojan + v2ray 和 nginx"
     green " 9. 安装 Oh My Zsh 与插件zsh-autosuggestions 等软件"
@@ -919,7 +1193,7 @@ function start_menu(){
             bbr_boost_sh
         ;;
         2 )
-            install_trojan
+            installTrojanWholeProcess
         ;;
         3 )
             remove_trojan
@@ -928,7 +1202,8 @@ function start_menu(){
             repair_cert
         ;;
         5 )
-            testPortUsage
+            install_caddy
+            install_v2ray
         ;;
         6 )
             setDateZone
@@ -944,15 +1219,19 @@ function start_menu(){
             installOnMyZsh
         ;;
         21 )
+            $osSystemPackage -y install wget curl
             vps_superspeed
         ;;
         22 )
+            $osSystemPackage -y install wget curl
             vps_zbench
         ;;
         23 )
+            $osSystemPackage -y install wget curl
             vps_testrace
         ;;
         24 )
+            $osSystemPackage -y install wget curl
             vps_LemonBench
         ;;
         0 )
@@ -967,7 +1246,5 @@ function start_menu(){
     esac
 }
 
-
 getLinuxOSVersion
-$osSystemPackage -y install wget curl
 start_menu

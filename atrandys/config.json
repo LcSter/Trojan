@@ -1,0 +1,86 @@
+{
+  "log" : {
+    "access": "/var/log/v2ray/access.log",
+    "error": "/var/log/v2ray/error.log",
+    "loglevel": "warning"
+  },
+  "inbound": {
+    "port": 11234,
+    "listen":"127.0.0.1",
+    "protocol": "vmess",
+    "settings": {
+      "clients": [
+        {
+          "id": "v2rayPassword1",
+          "level": 1,
+          "alterId": 64,
+          "email": "password11@gmail.com"
+        },
+        {
+          "id": "v2rayPassword2",
+          "level": 1,
+          "alterId": 64,
+          "email": "password12@gmail.com"
+        },
+        {
+          "id": "v2rayPassword3",
+          "level": 1,
+          "alterId": 64,
+          "email": "password13@gmail.com"
+        },
+        {
+          "id": "v2rayPassword4",
+          "level": 1,
+          "alterId": 64,
+          "email": "password14@gmail.com"
+        },
+        {
+          "id": "v2rayPassword5",
+          "level": 1,
+          "alterId": 64,
+          "email": "password15@gmail.com"
+        },
+        {
+          "id": "v2rayPassword6",
+          "level": 1,
+          "alterId": 64,
+          "email": "password16@gmail.com"
+        },
+        {
+          "id": "v2rayPassword7",
+          "level": 1,
+          "alterId": 64,
+          "email": "password17@gmail.com"
+        },
+        {
+          "id": "v2rayPassword8",
+          "level": 1,
+          "alterId": 64,
+          "email": "password18@gmail.com"
+        },
+        {
+          "id": "v2rayPassword9",
+          "level": 1,
+          "alterId": 64,
+          "email": "password19@gmail.com"
+        },
+        {
+          "id": "v2rayPassword10",
+          "level": 1,
+          "alterId": 64,
+          "email": "password20@gmail.com"
+        }
+      ]
+    },
+    "streamSettings": {
+      "network": "ws",
+      "wsSettings": {
+        "path": "/mypath"
+      }
+    }
+  },
+  "outbound": {
+    "protocol": "freedom",
+    "settings": {}
+  }
+}
