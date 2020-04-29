@@ -293,6 +293,7 @@ configDomainV2ray=""
 
 caddyConfigPath="/etc/caddy/"
 caddyConfigFile="/etc/caddy/Caddyfile"
+caddyCertPath="${HOME}/caddy/cert"
 
 configV2rayBinPath="/usr/bin/v2ray"
 configV2rayDefaultConfigPath="/etc/v2ray"
@@ -875,18 +876,8 @@ function install_caddy(){
 
         curl https://getcaddy.com | bash -s personal
 
-        groupadd --system caddy
-        useradd --system \
-            --gid caddy \
-            --create-home \
-            --home-dir /var/lib/caddy \
-            --shell /usr/sbin/nologin \
-            --comment "Caddy web server" \
-            caddy
-
         mkdir "${caddyConfigPath}"
-        touch "${caddyConfigFile}"
-        chown -R root:caddy $caddyConfigPath
+        mkdir -p "${caddyCertPath}"
 
         cat > "${caddyConfigFile}" <<-EOF
 $configDomainV2ray
@@ -905,37 +896,54 @@ EOF
         wget -O ${configV2rayPath}/website/v2ray_website.zip https://github.com/jinwyp/Trojan/raw/master/web.zip
         unzip -d ${configV2rayWebsitePath} ${configV2rayPath}/website/v2ray_website.zip
 
-        chown -R root:caddy ${configV2rayWebsitePath}
-
         # 增加启动脚本
         # https://github.com/caddyserver/dist/blob/master/init/caddy.service
 
         cat > ${osSystemmdPath}caddy.service <<-EOF
 [Unit]
-Description=Caddy
+Description=Caddy HTTP/2 web server
 Documentation=https://caddyserver.com/docs/
-After=network.target
+After=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
+
 
 [Service]
-User=caddy
-Group=caddy
-ExecStart=/usr/local/bin/caddy run --environ --config ${caddyConfigFile}
-ExecReload=/usr/local/bin/caddy reload --config ${caddyConfigFile}
+Restart=on-abnormal
+
+User=root
+Group=root
+
+Environment=CADDYPATH=${caddyCertPath}
+
+
+ExecStart=/usr/local/bin/caddy -log /root/caddy-v2ray-access.log -agree=true -conf=${caddyConfigFile}
+ExecReload=/bin/kill -USR1 \$MAINPID
+
+KillMode=mixed
+KillSignal=SIGQUIT
 TimeoutStopSec=5s
+
 LimitNOFILE=1048576
 LimitNPROC=512
 PrivateTmp=true
+PrivateDevices=false
 ProtectSystem=full
+
+ReadWritePaths=${caddyCertPath}
+ReadWriteDirectories=${caddyCertPath}
+
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-        chmod +x ${osSystemmdPath}caddy.service
-        systemctl daemon-reload
-        systemctl enable caddy.service
-        systemctl start caddy.service
+        sudo chmod +x ${osSystemmdPath}caddy.service
+        sudo systemctl daemon-reload
+        sudo systemctl enable caddy.service
+        sudo systemctl start caddy.service
 
         green "=========================================="
         green "       Web服务器 Caddy 安装成功!!"
@@ -1181,10 +1189,10 @@ function start_menu(){
     echo
     green " 下面是 VPS 测网速工具"
     red " 脚本测速会大量消耗 VPS 流量，请悉知！"
-    blue " 21. superspeed 三网纯测速 （全国各地三大运营商部分节点全面测速）"
-    blue " 22. ZBench 综合网速测试  （包含节点测速, Ping 以及 路由测试）"
-	blue " 23. testrace 回程路由  （四网路由测试）"
-	blue " 24. LemonBench 快速全方位测试 （包含CPU内存性能、回程、速度）"
+    green " 21. superspeed 三网纯测速 （全国各地三大运营商部分节点全面测速）"
+    green " 22. ZBench 综合网速测试  （包含节点测速, Ping 以及 路由测试）"
+	green " 23. testrace 回程路由  （四网路由测试）"
+	green " 24. LemonBench 快速全方位测试 （包含CPU内存性能、回程、速度）"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" menuInputNumber
