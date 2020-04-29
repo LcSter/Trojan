@@ -277,6 +277,8 @@ configLocalIp=""
 configDomainTrojan=""
 
 nginxConfigPath="/etc/nginx/nginx.conf"
+nginxAccessLogFile="${HOME}/nginx-trojan-access.log"
+nginxErrorLogFile="${HOME}/nginx-trojan-error.log"
 
 configTrojanPasswordPrefix="jin"
 configTrojanPath="${HOME}/trojan"
@@ -294,14 +296,16 @@ configDomainV2ray=""
 caddyConfigPath="/etc/caddy/"
 caddyConfigFile="/etc/caddy/Caddyfile"
 caddyCertPath="${HOME}/caddy/cert"
+caddyAccessLogFile="${HOME}/caddy/caddy-v2ray-access.log"
+caddyErrorLogFile="${HOME}/caddy/caddy-v2ray-error.log"
 
 configV2rayBinPath="/usr/bin/v2ray"
 configV2rayDefaultConfigPath="/etc/v2ray"
 configV2rayDefaultConfigFile="/etc/v2ray/config.json"
 
 configV2rayPath="${HOME}/v2ray"
-configV2rayLogFile="${HOME}/v2ray-access.log"
-configV2rayLogErrorFile="${HOME}/v2ray-error.log"
+configV2rayAccessLogFile="${HOME}/v2ray-access.log"
+configV2rayErrorLogFile="${HOME}/v2ray-error.log"
 configV2rayWebsitePath="${HOME}/v2ray/website/html"
 configV2rayWebSocketPath=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
 configV2rayPort="$(($RANDOM + 10000))"
@@ -364,8 +368,8 @@ http {
     log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
                       '\$status \$body_bytes_sent "\$http_referer" '
                       '"\$http_user_agent" "\$http_x_forwarded_for"';
-    access_log  /root/nginx-trojan-access.log  main;
-    error_log /root/nginx-trojan-error.log;
+    access_log  $nginxAccessLogFile  main;
+    error_log $nginxErrorLogFile;
     sendfile        on;
     #tcp_nopush     on;
     keepalive_timeout  120;
@@ -421,7 +425,7 @@ function get_https_certificate(){
 }
 
 
-function download_and_install_trojan_server(){
+function install_trojan_server(){
 
     trojanPassword1=$(cat /dev/urandom | head -1 | md5sum | head -c 10)
     trojanPassword2=$(cat /dev/urandom | head -1 | md5sum | head -c 10)
@@ -707,7 +711,8 @@ EOF
 	green "    伪装站点为 http://${configDomainTrojan}!"
 	green "    伪装站点的静态html内容放置在目录 ${configTrojanWebsitePath}, 可自行更换网站内容!"
 	red "    nginx 配置路径 ${nginxConfigPath} !"
-	red "    nginx 访问日志 /root/nginx-trojan-access.log !"
+	red "    nginx 访问日志 ${nginxAccessLogFile} !"
+	red "    nginx 错误日志 ${nginxErrorLogFile} !"
 	red "    Trojan 服务器端配置路径 ${configTrojanPath}/src/server.conf !"
 	red "    Trojan 访问日志 ${configTrojanLogFile} !"
 	green "    trojan 停止命令: systemctl stop trojan.service  启动命令: systemctl start trojan.service  重启命令: systemctl restart trojan.service"
@@ -796,7 +801,7 @@ function installTrojanWholeProcess(){
             green "=========================================="
             green "       证书获取成功!!"
             green "=========================================="
-            download_and_install_trojan_server
+            install_trojan_server
         else
             red "==================================="
             red " https证书没有申请成功，安装失败!"
@@ -870,9 +875,17 @@ function install_caddy(){
     read configDomainV2ray
     if compareRealIpWithLocalIp "${configDomainV2ray}" ; then
 
+        if [[ -f ${osSystemmdPath}caddy.service ]]; then
+            green "=========================================="
+            green "  已安装过 Caddy, 退出安装 !"
+            green "=========================================="
+            exit
+        fi
+
         green "=========================================="
 	    green "          开始安装 Caddy web服务器 !"
 	    green "=========================================="
+
 
         curl https://getcaddy.com | bash -s personal
 
@@ -887,6 +900,8 @@ $configDomainV2ray
     websocket
     header_upstream -Origin
   }
+  log $caddyAccessLogFile
+  errors $caddyErrorLogFile
 }
 EOF
 
@@ -916,7 +931,7 @@ Group=root
 Environment=CADDYPATH=${caddyCertPath}
 
 
-ExecStart=/usr/local/bin/caddy -log /root/caddy-v2ray-access.log -agree=true -conf=${caddyConfigFile}
+ExecStart=/usr/local/bin/caddy -agree=true -conf=${caddyConfigFile}
 ExecReload=/bin/kill -USR1 \$MAINPID
 
 KillMode=mixed
@@ -929,8 +944,8 @@ PrivateTmp=true
 PrivateDevices=false
 ProtectSystem=full
 
-ReadWritePaths=${caddyCertPath}
-ReadWriteDirectories=${caddyCertPath}
+ReadWritePaths=${HOME}
+ReadWriteDirectories=${HOME}
 
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
@@ -944,6 +959,7 @@ EOF
         sudo systemctl daemon-reload
         sudo systemctl enable caddy.service
         sudo systemctl start caddy.service
+        sudo systemctl status caddy.service
 
         green "=========================================="
         green "       Web服务器 Caddy 安装成功!!"
@@ -989,8 +1005,8 @@ function install_v2ray(){
     cat > ${configV2rayDefaultConfigFile} <<-EOF
 {
   "log" : {
-    "access": "$configV2rayLogFile",
-    "error": "$configV2rayLogErrorFile",
+    "access": "$configV2rayAccessLogFile",
+    "error": "$configV2rayErrorLogFile",
     "loglevel": "warning"
   },
   "inbound": {
@@ -1107,10 +1123,11 @@ EOF
 	green "    伪装站点为 https://${configDomainV2ray}!"
 	green "    伪装站点的静态html内容放置在目录 ${configV2rayWebsitePath}, 可自行更换网站内容!"
 	red "    caddy 配置路径 ${caddyConfigFile} !"
-	red "    caddy 访问日志 /root/caddy-v2ray-access.log !"
+	red "    caddy 访问日志 ${caddyAccessLogFile} !"
+	red "    caddy 错误日志 ${caddyErrorLogFile} !"
 	red "    V2ray 服务器端配置路径 ${configV2rayDefaultConfigFile} !"
-	red "    V2ray 访问日志 ${configV2rayLogFile} !"
-	red "    V2ray 访问错误日志 ${configV2rayLogErrorFile} !"
+	red "    V2ray 访问日志 ${configV2rayAccessLogFile} !"
+	red "    V2ray 访问错误日志 ${configV2rayErrorFile} !"
 	green "    V2ray 停止命令: systemctl stop v2ray.service  启动命令: systemctl start v2ray.service  重启命令: systemctl restart v2ray.service"
 	green "    caddy 停止命令: systemctl stop caddy.service  启动命令: systemctl start caddy.service  重启命令: systemctl restart caddy.service"
 	green "    V2ray 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
@@ -1134,6 +1151,45 @@ EOF
 	green "======================================================================"
 
 }
+
+function remove_v2ray(){
+
+    rm -rf /usr/bin/v2ray /etc/v2ray
+
+    green "================================"
+    red "即将卸载 v2ray "
+    red "同时卸载已安装的 caddy"
+    green "================================"
+
+    systemctl stop caddy.service
+    systemctl disable caddy.service
+    systemctl stop v2ray.service
+    systemctl disable v2ray.service
+
+    rm -rf /usr/local/bin/caddy
+    rm -rf ${caddyConfigPath}
+    rm -rf ${caddyCertPath}
+
+    rm -f ${osSystemmdPath}caddy.service
+
+
+    rm -rf ${configV2rayBinPath}
+    rm -rf ${configV2rayDefaultConfigPath}
+    rm -rf ${configV2rayPath}
+
+    rm -f ${osSystemmdPath}v2ray.service
+    rm -f /etc/systemd/system/v2ray.service
+    rm -f /lib/systemd/system/v2ray.service
+
+    crontab -r
+
+    green "================================"
+    green "  v2ray 和 caddy 卸载完毕 !"
+    green "  crontab 定时任务 删除完毕 !"
+    green "================================"
+
+}
+
 
 function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
@@ -1214,7 +1270,7 @@ function start_menu(){
             install_v2ray
         ;;
         6 )
-            setDateZone
+            remove_v2ray
         ;;
         7 )
             testPortUsage
