@@ -304,8 +304,8 @@ configV2rayDefaultConfigPath="/etc/v2ray"
 configV2rayDefaultConfigFile="/etc/v2ray/config.json"
 
 configV2rayPath="${HOME}/v2ray"
-configV2rayAccessLogFile="${HOME}/v2ray-access.log"
-configV2rayErrorLogFile="${HOME}/v2ray-error.log"
+configV2rayAccessLogFile="${HOME}/v2ray/v2ray-access.log"
+configV2rayErrorLogFile="${HOME}/v2ray/v2ray-error.log"
 configV2rayWebsitePath="${HOME}/v2ray/website/html"
 configV2rayWebSocketPath=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
 configV2rayPort="$(($RANDOM + 10000))"
@@ -342,6 +342,14 @@ function install_nginx(){
     green "=============================================="
 
     sleep 1s
+
+    if [[ -f "${osSystemmdPath}caddy.service" ]] ; then
+        systemctl stop caddy.service
+    fi
+
+    if [[ -f "${osSystemmdPath}v2ray.service" ]] || [[ -f "/etc/systemd/system/v2ray.service" ]] || [[ -f "/lib/systemd/system/v2ray.service" ]] ; then
+        systemctl stop v2ray.service
+    fi
 
     if test -s ${nginxConfigPath}; then
         green "==========================="
@@ -856,6 +864,10 @@ function remove_trojan(){
 
 
 
+
+
+
+
 function install_caddy(){
     nginx_status=`ps -aux | grep "nginx: worker" | grep -v "grep"`
     if [ -n "$nginx_status" ]; then
@@ -1108,7 +1120,7 @@ uuid：${v2rayPassword1}
 }
 EOF
 
-
+    sudo systemctl daemon-reload
     systemctl restart v2ray.service
     systemctl restart caddy.service
 
