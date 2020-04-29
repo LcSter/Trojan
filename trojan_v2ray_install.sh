@@ -392,11 +392,21 @@ http {
     keepalive_timeout  120;
     client_max_body_size 20m;
     #gzip  on;
+
     server {
         listen       80;
         server_name  $configDomainTrojan;
         root $configTrojanWebsitePath;
         index index.php index.html index.htm;
+
+        location /$configV2rayWebSocketPath {
+            proxy_redirect off;
+            proxy_pass http://127.0.0.1:$configV2rayPort;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host \$http_host;
+        }
     }
 }
 EOF
@@ -807,6 +817,8 @@ function installTrojanWholeProcess(){
     read configDomainTrojan
     if compareRealIpWithLocalIp "${configDomainTrojan}" ; then
 
+        configDomainV2ray=${configDomainTrojan}
+
         if [[ -z $1 ]] ; then
             install_nginx
             get_https_certificate
@@ -1173,19 +1185,14 @@ EOF
 
 }
 
-function remove_v2ray(){
-
-    rm -rf /usr/bin/v2ray /etc/v2ray
+function remove_caddy(){
 
     green "================================"
-    red "即将卸载 v2ray "
-    red "同时卸载已安装的 caddy"
+    red "  即将卸载已安装的 caddy"
     green "================================"
 
     systemctl stop caddy.service
     systemctl disable caddy.service
-    systemctl stop v2ray.service
-    systemctl disable v2ray.service
 
     rm -rf /usr/local/bin/caddy
     rm -rf ${caddyConfigPath}
@@ -1193,6 +1200,26 @@ function remove_v2ray(){
 
     rm -f ${osSystemmdPath}caddy.service
 
+    green "================================"
+    green "  caddy 卸载完毕 !"
+    green "================================"
+
+    remove_v2ray
+
+
+}
+
+function remove_v2ray(){
+
+    rm -rf /usr/bin/v2ray /etc/v2ray
+
+    green "================================"
+    red " 即将卸载 v2ray "
+    green "================================"
+
+
+    systemctl stop v2ray.service
+    systemctl disable v2ray.service
 
     rm -rf ${configV2rayBinPath}
     rm -rf ${configV2rayDefaultConfigPath}
@@ -1205,7 +1232,7 @@ function remove_v2ray(){
     crontab -r
 
     green "================================"
-    green "  v2ray 和 caddy 卸载完毕 !"
+    green "  v2ray 卸载完毕 !"
     green "  crontab 定时任务 删除完毕 !"
     green "================================"
 
@@ -1294,14 +1321,15 @@ function start_menu(){
             install_v2ray
         ;;
         6 )
-            remove_v2ray
+            remove_caddy
         ;;
         7 )
-            testPortUsage
+            installTrojanWholeProcess
+            install_v2ray
         ;;
         8 )
-            trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
-            echo "${trojanVersion}"
+            remove_trojan
+            remove_v2ray
         ;;
         9 )
             installOnMyZsh
