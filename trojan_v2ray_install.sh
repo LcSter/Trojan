@@ -97,6 +97,10 @@ function installOnMyZsh(){
             green "===== Shell successfully changed to '$zsh'."
         fi
 
+
+        echo 'alias lla="ll -ah"' >> ${HOME}/.zshrc
+        echo 'alias mi="micro"' >> ${HOME}/.zshrc
+
     fi
 
 
@@ -120,6 +124,11 @@ EOF
     curl https://getmic.ro | bash
 
     cp ${HOME}/bin/micro /usr/local/bin
+
+
+
+
+
 }
 
 
@@ -1145,18 +1154,18 @@ EOF
 	green "    V2ray 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
 	green "======================================================================"
 	blue  "----------------------------------------"
-	yellow "V2ray 配置信息如下, 请自行复制保存, 密码任选其一 !!"
+	yellow "V2ray 配置信息如下, 请自行复制保存, 密码任选其一 (密码即用户ID或UUID) !!"
 	yellow "服务器地址: ${configDomainV2ray}  端口: 443"
-	yellow "密码1: ${v2rayPassword1}"
-	yellow "密码2: ${v2rayPassword2}"
-	yellow "密码3: ${v2rayPassword3}"
-	yellow "密码4: ${v2rayPassword4}"
-	yellow "密码5: ${v2rayPassword5}"
-	yellow "密码6: ${v2rayPassword6}"
-	yellow "密码7: ${v2rayPassword7}"
-	yellow "密码8: ${v2rayPassword8}"
-	yellow "密码9: ${v2rayPassword9}"
-	yellow "密码10: ${v2rayPassword10}"
+	yellow "用户ID或密码1: ${v2rayPassword1}"
+	yellow "用户ID或密码2: ${v2rayPassword2}"
+	yellow "用户ID或密码3: ${v2rayPassword3}"
+	yellow "用户ID或密码4: ${v2rayPassword4}"
+	yellow "用户ID或密码5: ${v2rayPassword5}"
+	yellow "用户ID或密码6: ${v2rayPassword6}"
+	yellow "用户ID或密码7: ${v2rayPassword7}"
+	yellow "用户ID或密码8: ${v2rayPassword8}"
+	yellow "用户ID或密码9: ${v2rayPassword9}"
+	yellow "用户ID或密码10: ${v2rayPassword10}"
 
 	cat "${configV2rayPath}/clientConfig.json"
 	blue  "----------------------------------------"
@@ -1246,12 +1255,15 @@ function start_menu(){
     echo
     green " 1. 安装 BBR-PLUS 加速4合一脚本"
     green " 2. 安装 trojan 和 nginx 不支持CDN"
-    red " 3. 卸载 trojan 与 nginx"
-    green " 4. 修复证书 并继续安装 trojan"
+    green " 3. 修复证书 并继续安装 trojan"
+    red " 4. 卸载 trojan 与 nginx"
+
     green " 5. 安装 v2ray 和 Caddy, 支持 websocket tls1.3, 支持CDN"
     red " 6. 卸载v2ray 和 Caddy"
+
     green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
     red " 8. 卸载 trojan + v2ray 和 nginx"
+
     green " 9. 安装 Oh My Zsh 与插件zsh-autosuggestions 等软件"
     green " ======================================="
     echo
@@ -1272,10 +1284,10 @@ function start_menu(){
             installTrojanWholeProcess
         ;;
         3 )
-            remove_trojan
+            repair_cert
         ;;
         4 )
-            repair_cert
+            remove_trojan
         ;;
         5 )
             install_caddy
