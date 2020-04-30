@@ -44,4 +44,6 @@ wget --no-check-certificate https://raw.githubusercontent.com/jinwyp/Trojan/mast
 4. 安装 trojan 或 v2ray. 根据提示 重新运行脚本 ```./trojan_v2ray_install.sh ```  选2 安装trojan, 或选5 安装v2ray, 或选7同时安装trojan和v2ray.
 
 
-
+5. 安装 BBR plus 出现提示 "是否终止删除内核" 请选择 "NO". 就是要卸载掉目前的内核. 
+![注意 安装BBR plus](https://github.com/jinwyp/Trojan/blob/master/debian.png?raw=true)
+![注意 安装BBR plus](https://github.com/jinwyp/Trojan/blob/master/kernel.png?raw=true)
