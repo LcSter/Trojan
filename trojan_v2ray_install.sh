@@ -57,6 +57,7 @@ function installOnMyZsh(){
     if [ "$osRelease" == "centos" ]; then
 
         sudo $osSystemPackage install zsh -y
+        $osSystemPackage install util-linux-user -y
 
     elif [ "$osRelease" == "ubuntu" ]; then
 
@@ -325,6 +326,8 @@ configV2rayErrorLogFile="${HOME}/v2ray-error.log"
 configV2rayWebsitePath="${HOME}/v2ray/website/html"
 configV2rayWebSocketPath=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
 configV2rayPort="$(($RANDOM + 10000))"
+
+configV2raySystemdFile="/etc/systemd/system/v2ray.service"
 v2rayVersion="4.23.1"
 
 function compareRealIpWithLocalIp(){
@@ -990,7 +993,7 @@ ProtectSystem=full
 ReadWritePaths=${HOME}
 ReadWriteDirectories=${HOME}
 
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+#CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
 
@@ -1150,7 +1153,7 @@ uuid：${v2rayPassword1}
 底层传输：tls
 }
 EOF
-
+    sed -i 's/CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW/#CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW/g' ${configV2raySystemdFile}
     sudo systemctl daemon-reload
     systemctl restart v2ray.service
     systemctl restart caddy.service
@@ -1226,7 +1229,6 @@ function remove_caddy(){
 
     remove_v2ray
 
-
 }
 
 function remove_v2ray(){
@@ -1246,7 +1248,7 @@ function remove_v2ray(){
     rm -rf ${configV2rayPath}
 
     rm -f ${osSystemmdPath}v2ray.service
-    rm -f /etc/systemd/system/v2ray.service
+    rm -f ${configV2raySystemdFile}
     rm -f /lib/systemd/system/v2ray.service
 
     crontab -r
