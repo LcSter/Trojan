@@ -252,7 +252,7 @@ function testPortUsage() {
         systemctl disable firewalld
         rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
         $osSystemPackage update -y
-        $osSystemPackage install curl wget xz git unzip zip tar -y
+        $osSystemPackage install curl wget xz git unzip zip tar iputils-ping -y
 
     elif [ "$osRelease" == "ubuntu" ]; then
         if  [ -n "$(grep ' 14\.' /etc/os-release)" ] ;then
@@ -271,11 +271,11 @@ function testPortUsage() {
         systemctl stop ufw
         systemctl disable ufw
         $osSystemPackage update -y
-        $osSystemPackage install curl wget git unzip zip xz-utils tar -y
+        $osSystemPackage install curl wget git unzip zip xz-utils tar iputils-ping -y
 
     elif [ "$osRelease" == "debian" ]; then
         $osSystemPackage update -y
-        $osSystemPackage install curl wget git unzip zip xz-utils tar -y
+        $osSystemPackage install curl wget git unzip zip xz-utils tar iputils-ping -y
     fi
 
 }
