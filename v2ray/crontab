@@ -1,0 +1,8 @@
+11 4 * * 0,1,2,3,4,5,6 /etc/init.d/goflyway stop
+12 4 * * 0,1,2,3,4,5,6 /etc/init.d/goflyway start
+
+21 4 * * 0,1,2,3,4,5,6 systemctl restart v2ray.service
+23 4 * * 0,1,2,3,4,5,6 systemctl restart caddy.service
+
+18 0 * * * "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" > /dev/null
+

@@ -305,16 +305,16 @@ configDomainV2ray=""
 caddyConfigPath="/etc/caddy/"
 caddyConfigFile="/etc/caddy/Caddyfile"
 caddyCertPath="${HOME}/caddy/cert"
-caddyAccessLogFile="${HOME}/caddy/caddy-v2ray-access.log"
-caddyErrorLogFile="${HOME}/caddy/caddy-v2ray-error.log"
+caddyAccessLogFile="${HOME}/caddy-v2ray-access.log"
+caddyErrorLogFile="${HOME}/caddy-v2ray-error.log"
 
 configV2rayBinPath="/usr/bin/v2ray"
 configV2rayDefaultConfigPath="/etc/v2ray"
 configV2rayDefaultConfigFile="/etc/v2ray/config.json"
 
 configV2rayPath="${HOME}/v2ray"
-configV2rayAccessLogFile="${HOME}/v2ray/v2ray-access.log"
-configV2rayErrorLogFile="${HOME}/v2ray/v2ray-error.log"
+configV2rayAccessLogFile="${HOME}/v2ray-access.log"
+configV2rayErrorLogFile="${HOME}/v2ray-error.log"
 configV2rayWebsitePath="${HOME}/v2ray/website/html"
 configV2rayWebSocketPath=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
 configV2rayPort="$(($RANDOM + 10000))"
@@ -961,8 +961,8 @@ Wants=network-online.target systemd-networkd-wait-online.service
 [Service]
 Restart=on-abnormal
 
-User=root
-Group=root
+# User=root
+# Group=root
 
 Environment=CADDYPATH=${caddyCertPath}
 
