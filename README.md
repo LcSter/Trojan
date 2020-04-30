@@ -45,5 +45,5 @@ wget --no-check-certificate https://raw.githubusercontent.com/jinwyp/Trojan/mast
 
 
 5. 安装 BBR plus 出现提示 "是否终止删除内核" 请选择 "NO". 就是要卸载掉目前的内核. 
-![注意 安装BBR plus](https://github.com/jinwyp/Trojan/blob/master/debian.png?raw=true)
+![注意 安装BBR plus](https://github.com/jinwyp/Trojan/blob/master/debian.jpg?raw=true)
 ![注意 安装BBR plus](https://github.com/jinwyp/Trojan/blob/master/kernel.png?raw=true)
