@@ -51,21 +51,25 @@ function installOnMyZsh(){
     testPortUsage
 
     green "=============================="
-    yellow "准备安装 ZSH and oh-my-zsh"
+    yellow "准备安装 ZSH"
     green "=============================="
 
     if [ "$osRelease" == "centos" ]; then
 
-        sudo $osSystemPackage update && sudo $osSystemPackage install zsh -y
+        sudo $osSystemPackage install zsh -y
 
     elif [ "$osRelease" == "ubuntu" ]; then
 
-        $osSystemPackage install zsh -y
+        sudo $osSystemPackage install zsh -y
 
     elif [ "$osRelease" == "debian" ]; then
 
-        $osSystemPackage install zsh -y
+        sudo $osSystemPackage install zsh -y
     fi
+
+    green "=============================="
+    yellow " ZSH 安装成功, 准备安装 oh-my-zsh"
+    green "=============================="
 
     # 安装 oh-my-zsh
     if [[ ! -d "${HOME}/.oh-my-zsh" ]] ;  then
@@ -252,7 +256,8 @@ function testPortUsage() {
         systemctl disable firewalld
         rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
         $osSystemPackage update -y
-        $osSystemPackage install curl wget xz git unzip zip tar iputils-ping -y
+        $osSystemPackage install curl wget xz git unzip zip tar -y
+        $osSystemPackage install iputils-ping -y
 
     elif [ "$osRelease" == "ubuntu" ]; then
         if  [ -n "$(grep ' 14\.' /etc/os-release)" ] ;then
@@ -271,11 +276,13 @@ function testPortUsage() {
         systemctl stop ufw
         systemctl disable ufw
         $osSystemPackage update -y
-        $osSystemPackage install curl wget git unzip zip xz-utils tar iputils-ping -y
+        $osSystemPackage install curl wget xz git unzip zip tar -y
+        $osSystemPackage install iputils-ping -y
 
     elif [ "$osRelease" == "debian" ]; then
         $osSystemPackage update -y
-        $osSystemPackage install curl wget git unzip zip xz-utils tar iputils-ping -y
+        $osSystemPackage install curl wget xz git unzip zip tar -y
+        $osSystemPackage install iputils-ping -y
     fi
 
 }
