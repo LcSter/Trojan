@@ -944,6 +944,9 @@ EOF
         wget -O ${configV2rayPath}/website/v2ray_website.zip https://github.com/jinwyp/Trojan/raw/master/web.zip
         unzip -d ${configV2rayWebsitePath} ${configV2rayPath}/website/v2ray_website.zip
 
+        wget -O ${configV2rayPath}/website/v2ray_client_all.zip https://github.com/jinwyp/Trojan/raw/master/v2ray_client_all.zip
+        unzip -d ${configV2rayWebsitePath} ${configV2rayPath}/website/v2ray_client_all.zip
+
         # 增加启动脚本
         # https://github.com/caddyserver/dist/blob/master/init/caddy.service
 
@@ -1182,6 +1185,16 @@ EOF
 	cat "${configV2rayPath}/clientConfig.json"
 	blue  "----------------------------------------"
 	green "======================================================================"
+	green "======================================================================"
+	green "请下载相应的 v2ray 客户端:"
+	yellow "1 Windows 客户端V2rayN下载：http://${configDomainV2ray}/download/v2ray-windows.zip"
+    yellow "2 MacOS 客户端下载：http://${configDomainV2ray}/download/v2ray-mac.zip"
+    yellow "3 Android 客户端下载 https://github.com/2dust/v2rayNG/releases "
+    yellow "4 iOS 客户端 请安装小火箭 https://shadowsockshelp.github.io/ios/ "
+    yellow "  iOS 请安装小火箭另一个地址 https://lueyingpro.github.io/shadowrocket/index.html "
+    yellow "  iOS 安装小火箭遇到问题 教程 https://github.com/shadowrocketHelp/help/ "
+    yellow "其他客户端程序请看 https://www.v2ray.com/awesome/tools.html "
+    green "======================================================================"
 
 }
 
@@ -1291,7 +1304,7 @@ function start_menu(){
     green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
     red " 8. 卸载 trojan + v2ray 和 nginx"
 
-    green " 9. 安装 Oh My Zsh 与插件zsh-autosuggestions 等软件"
+    green " 9. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"
     green " ======================================="
     echo
     green " 下面是 VPS 测网速工具"
