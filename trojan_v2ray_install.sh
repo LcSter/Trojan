@@ -118,7 +118,7 @@ set fencs=utf8,gbk,gb2312,gb18030
 
 syntax on
 set nu!
-set autoindent
+
 EOF
     fi
 
