@@ -56,8 +56,10 @@ function setRootLogin() {
         fi
         if [ "$osRelease" == "ubuntu" ]; then
             sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
-        fi
-        
+        fi  
+
+        green "设置允许root登陆成功!"
+
     fi
 
 
@@ -66,13 +68,51 @@ function setRootLogin() {
 
     if [[ $osIsRootLoginWithPassword == [Yy] ]]; then
         sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+        green "设置允许root使用密码登陆成功!"
     fi
 
-    sudo service ssh restart
+
+    if [ "$osRelease" == "centos" ] ; then
+        sudo service sshd restart
+        sudo systemctl restart sshd
+
+        green "设置成功, 请用shell工具软件登陆vps服务器!"
+    fi
+
+    if [ "$osRelease" == "ubuntu" ] || [ "$osRelease" == "debian" ] ; then
+        sudo service ssh restart
+        sudo systemctl restart ssh
+
+        green "设置成功, 请用shell工具软件登陆vps服务器!"
+    fi    
+
     # /etc/init.d/ssh restart
+    
+}
 
+function changeSSHPort() {
+    green "修改的SSH登陆的端口号, 不要使用常用的端口号. 例如 20|21|23|25|53|69|80|110|443|123!"
+    read -p "请输入要修改的端口号(必须是纯数字并且在1024~65535之间或22):" osSSHPort
+    osSSHPort=${osIsRootLoginWithPassword:-0}
 
+    if [ $osSSHPort -eq 22 -o $osSSHPort -gt 1024 -a $osSSHPort -lt 65535 ]; then
+        sed -i 's/#\?Port [0-9]*/Port ${osSSHPort}/g' /etc/ssh/sshd_config
 
+        if [ "$osRelease" == "centos" ] ; then
+            sudo service sshd restart
+            sudo systemctl restart sshd
+        fi
+
+        if [ "$osRelease" == "ubuntu" ] || [ "$osRelease" == "debian" ] ; then
+            sudo service ssh restart
+            sudo systemctl restart ssh
+        fi   
+
+        green "设置成功, 请记住设置的端口号 ${osSSHPort}!"
+        green "登陆服务器命令: ssh -p ${osSSHPort} root@111.111.111.your ip !"
+    else
+        echo "输入的端口号错误! 范围: 22,1025~65534"
+    fi
 }
 
 
@@ -1352,7 +1392,7 @@ function start_menu(){
     echo
     green " 9. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"    
     green " 10. 设置可以使用root登陆"
-
+    green " 11. 修改SSH 登陆端口号"
     green " ======================================="
     echo
     green " 下面是 VPS 测网速工具"
@@ -1400,7 +1440,11 @@ function start_menu(){
         ;;
         10 )
             setRootLogin
-            green "设置成功, 请用shell工具登陆vps服务器!"
+            sleep 5s
+            start_menu
+        ;;
+        11 )
+            changeSSHPort
             sleep 5s
             start_menu
         ;;
