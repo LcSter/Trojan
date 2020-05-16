@@ -93,7 +93,7 @@ function setRootLogin() {
 function changeSSHPort() {
     green "修改的SSH登陆的端口号, 不要使用常用的端口号. 例如 20|21|23|25|53|69|80|110|443|123!"
     read -p "请输入要修改的端口号(必须是纯数字并且在1024~65535之间或22):" osSSHPort
-    osSSHPort=${osIsRootLoginWithPassword:-0}
+    osSSHPort=${osSSHPort:-0}
 
     if [ $osSSHPort -eq 22 -o $osSSHPort -gt 1024 -a $osSSHPort -lt 65535 ]; then
         sed -i 's/#\?Port [0-9]*/Port ${osSSHPort}/g' /etc/ssh/sshd_config
