@@ -96,7 +96,7 @@ function changeSSHPort() {
     osSSHPort=${osSSHPort:-0}
 
     if [ $osSSHPort -eq 22 -o $osSSHPort -gt 1024 -a $osSSHPort -lt 65535 ]; then
-        sed -i 's/#\?Port [0-9]*/Port $osSSHPort/g' /etc/ssh/sshd_config
+        sed -i "s/#\?Port [0-9]*/Port $osSSHPort/g" /etc/ssh/sshd_config
 
         if [ "$osRelease" == "centos" ] ; then
             sudo service sshd restart
@@ -1437,12 +1437,12 @@ function start_menu(){
         ;;
         10 )
             setRootLogin
-            sleep 5s
+            sleep 10s
             start_menu
         ;;
         11 )
             changeSSHPort
-            sleep 5s
+            sleep 10s
             start_menu
         ;;
         21 )
