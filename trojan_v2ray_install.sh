@@ -42,6 +42,36 @@ function setDateZone(){
             green "=================================================="
         fi
     fi
+}
+
+function setRootLogin() {
+    
+    read -p "是否设置允许root登陆(ssh密钥方式 或 密码方式登陆 )? 请输入[Y/n]?" osIsRootLogin
+    osIsRootLogin=${osIsRootLogin:-Y}
+
+    if [[ $osIsRootLogin == [Yy] ]]; then
+
+        if [ "$osRelease" == "centos" ] || [ "$osRelease" == "debian" ] ; then
+            sudo sed -i 's/PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config
+        fi
+        if [ "$osRelease" == "ubuntu" ]; then
+            sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
+        fi
+        
+    fi
+
+
+    read -p "是否设置允许root使用密码登陆(上一步请先设置允许root登陆才可以)? 请输入[Y/n]?" osIsRootLoginWithPassword
+    osIsRootLoginWithPassword=${osIsRootLoginWithPassword:-Y}
+
+    if [[ $osIsRootLoginWithPassword == [Yy] ]]; then
+        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+    fi
+
+    sudo service ssh restart
+    # /etc/init.d/ssh restart
+
+
 
 }
 
@@ -1313,7 +1343,9 @@ function start_menu(){
     green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
     red " 8. 卸载 trojan + v2ray 和 nginx"
 
-    green " 9. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"
+    green " 9. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"    
+    green " 10. 设置可以使用root登陆"
+
     green " ======================================="
     echo
     green " 下面是 VPS 测网速工具"
@@ -1355,6 +1387,9 @@ function start_menu(){
         ;;
         9 )
             installOnMyZsh
+        ;;
+        10 )
+            setRootLogin
         ;;
         21 )
             $osSystemPackage -y install wget curl
