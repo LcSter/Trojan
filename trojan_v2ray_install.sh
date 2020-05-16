@@ -1362,12 +1362,12 @@ function vps_LemonBench(){
 
 function start_menu(){
     clear
-    green " ===================================="
+    green " ======================================="
     green " Trojan V2ray 一键安装自动脚本 2020-4-29 更新  "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
     green " 网站：www.v2rayssr.com （已开启禁止国内访问）"
     green " 此脚本集成于 atrandys 和 波仔 "
-    green " ===================================="
+    green " ======================================="
     blue " 声明："
     red " *请不要在任何生产环境使用此脚本"
     red " *请不要有其他程序占用80和443端口"
