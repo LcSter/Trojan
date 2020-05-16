@@ -1385,6 +1385,7 @@ function start_menu(){
     echo
     green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
     red " 8. 卸载 trojan + v2ray 和 nginx"
+    echo
     green " ======================================="
     echo
     green " 9. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"    
