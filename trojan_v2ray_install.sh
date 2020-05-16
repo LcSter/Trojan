@@ -1335,16 +1335,21 @@ function start_menu(){
     green " ======================================="
     echo
     green " 1. 安装 BBR-PLUS 加速4合一脚本"
+    green " ======================================="
+    echo
     green " 2. 安装 trojan 和 nginx 不支持CDN"
     green " 3. 修复证书 并继续安装 trojan"
     red " 4. 卸载 trojan 与 nginx"
-
+    green " ======================================="
+    echo
     green " 5. 安装 v2ray 和 Caddy, 支持 websocket tls1.3, 支持CDN"
     red " 6. 卸载v2ray 和 Caddy"
-
+    green " ======================================="
+    echo
     green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
     red " 8. 卸载 trojan + v2ray 和 nginx"
-
+    green " ======================================="
+    echo
     green " 9. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"    
     green " 10. 设置可以使用root登陆"
 
@@ -1356,7 +1361,10 @@ function start_menu(){
     green " 22. ZBench 综合网速测试  （包含节点测速, Ping 以及 路由测试）"
 	green " 23. testrace 回程路由  （四网路由测试）"
 	green " 24. LemonBench 快速全方位测试 （包含CPU内存性能、回程、速度）"
-    blue " 0. 退出脚本"
+
+    green " ======================================="
+    echo    
+    green " 0. 退出脚本"
     echo
     read -p "请输入数字:" menuInputNumber
     case "$menuInputNumber" in
