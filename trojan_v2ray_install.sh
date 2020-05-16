@@ -136,6 +136,8 @@ function installOnMyZsh(){
         echo 'alias lla="ll -ah"' >> ${HOME}/.zshrc
         echo 'alias mi="micro"' >> ${HOME}/.zshrc
 
+        green "oh-my-zsh 安装成功, 请exit命令退出服务器后重新登陆vps服务器即可启动 oh-my-zsh!"
+
     fi
 
 
@@ -1390,6 +1392,9 @@ function start_menu(){
         ;;
         10 )
             setRootLogin
+            green "设置成功, 请用shell工具登陆vps服务器!"
+            sleep 5s
+            start_menu
         ;;
         21 )
             $osSystemPackage -y install wget curl
