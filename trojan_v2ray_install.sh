@@ -1012,6 +1012,7 @@ function remove_trojan(){
 
     rm -f ${osSystemmdPath}trojan.service
     rm -rf ${configTrojanPath}
+    rm -rf "/etc/nginx"
     rm -rf /root/.acme.sh/
 
     crontab -r
