@@ -795,9 +795,19 @@ EOF
     rm ${configTrojanPath}/trojan-win-cli.zip
 
     mkdir ${configTrojanPath}/trojan-win-cli-temp
-    wget -P ${configTrojanPath}/trojan-win-cli-temp https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/trojan-${trojanVersion}-win.zip
-    unzip -d ${configTrojanPath}/trojan-win-cli-temp ${configTrojanPath}/trojan-win-cli-temp/trojan-${trojanVersion}-win.zip
-    mv -f ${configTrojanPath}/trojan-win-cli-temp/trojan/trojan.exe ${configTrojanPath}/trojan-win-cli/
+
+    if [ "$isTrojanGo" = "no" ] ; then
+      wget -P ${configTrojanPath}/trojan-win-cli-temp https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/trojan-${trojanVersion}-win.zip
+      unzip -d ${configTrojanPath}/trojan-win-cli-temp ${configTrojanPath}/trojan-win-cli-temp/trojan-${trojanVersion}-win.zip
+      mv -f ${configTrojanPath}/trojan-win-cli-temp/trojan/trojan.exe ${configTrojanPath}/trojan-win-cli/
+    fi
+
+    if [ "$isTrojanGo" = "yes" ] ; then
+      wget -P ${configTrojanPath}/trojan-win-cli-temp https://github.com/p4gefau1t/trojan-go/releases/download/v${trojanVersion}/trojan-go-windows-amd64.zip
+      unzip -d ${configTrojanPath}/trojan-win-cli-temp ${configTrojanPath}/trojan-win-cli-temp/trojan-go-windows-amd64.zip
+      mv -f ${configTrojanPath}/trojan-win-cli-temp/trojan-go-windows-amd64/trojan-go.exe ${configTrojanPath}/trojan-win-cli/
+    fi
+
 
 	  cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
 
@@ -997,7 +1007,8 @@ function remove_trojan(){
     if [ "$osRelease" == "centos" ]; then
         yum remove -y nginx
     else
-        apt autoremove -y nginx
+        apt autoremove -y --purge nginx nginx-common nginx-core
+        apt-get remove --purge nginx nginx-full nginx-common
     fi
 
     if [ "$isTrojanGo" = "no" ] ; then
