@@ -927,6 +927,7 @@ function installTrojanWholeProcess(){
     green "=============================================="
 
 
+
     if [ "$isTrojanGo" = "no" ] ; then
       configTrojanPath = "$configTrojanOriginalPath"
     fi
@@ -935,6 +936,7 @@ function installTrojanWholeProcess(){
       configTrojanPath = "$configTrojanGoPath"
       showTrojanName="-go"
     fi
+
 
     configTrojanWebsitePath="${configTrojanPath}/website/html"
 
