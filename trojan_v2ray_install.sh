@@ -528,10 +528,10 @@ function get_https_certificate(){
     green "=========================================="
 
 	if [[ $1 == "standalone" ]] ; then
-	    green "  开始第一次申请证书 acme.sh standalone mode !"
+	    green "  开始重新申请证书 acme.sh standalone mode !"
 	    ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --standalone
 	else
-	    green "  开始重新申请证书 acme.sh nginx mode !"
+	    green "  开始第一次申请证书 acme.sh nginx mode !"
         ~/.acme.sh/acme.sh  --issue  -d ${configDomainTrojan}  --webroot ${configTrojanWebsitePath}/
     fi
 
@@ -1416,6 +1416,7 @@ function vps_LemonBench(){
 
 function start_menu(){
     clear
+    getLinuxOSVersion
     green " ======================================="
     green " Trojan V2ray 一键安装自动脚本 2020-4-29 更新  "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
@@ -1543,5 +1544,5 @@ function start_menu(){
     esac
 }
 
-getLinuxOSVersion
+
 start_menu
