@@ -369,7 +369,7 @@ nginxConfigPath="/etc/nginx/nginx.conf"
 nginxAccessLogFile="${HOME}/nginx-trojan-access.log"
 nginxErrorLogFile="${HOME}/nginx-trojan-error.log"
 
-showTrojanName = ""
+showTrojanName=""
 isTrojanGo="no"
 trojanVersion="1.15.1"
 configTrojanCli="trojan-${trojanVersion}-linux-amd64.tar.xz"
@@ -929,11 +929,11 @@ function installTrojanWholeProcess(){
 
 
     if [ "$isTrojanGo" = "no" ] ; then
-      configTrojanPath = "$configTrojanOriginalPath"
+      configTrojanPath="$configTrojanOriginalPath"
     fi
 
     if [ "$isTrojanGo" = "yes" ] ; then
-      configTrojanPath = "$configTrojanGoPath"
+      configTrojanPath="$configTrojanGoPath"
       showTrojanName="-go"
     fi
 
@@ -998,11 +998,11 @@ function remove_trojan(){
 
     if [ "$isTrojanGo" = "no" ] ; then
       showTrojanName=""
-      configTrojanPath = "$configTrojanOriginalPath"
+      configTrojanPath="$configTrojanOriginalPath"
     fi
 
     if [ "$isTrojanGo" = "yes" ] ; then
-      configTrojanPath = "$configTrojanGoPath"
+      configTrojanPath="$configTrojanGoPath"
       showTrojanName="-go"
     fi
 
