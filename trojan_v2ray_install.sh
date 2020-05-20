@@ -791,7 +791,7 @@ After=network.target
 [Service]
 Type=simple
 PIDFile=${configTrojanPath}/src/trojan.pid
-ExecStart=${configTrojanPath}/src/trojan${showTrojanName} -c "${configTrojanPath}/src/server.conf"
+ExecStart=${configTrojanPath}/src/trojan${showTrojanName} -config "${configTrojanPath}/src/server.conf"
 ExecReload=/bin/kill -HUP \$MAINPID
 ExecStop=${configTrojanPath}/src/trojan${showTrojanName}
 PrivateTmp=true
@@ -827,7 +827,7 @@ EOF
     if [ "$isTrojanGo" = "yes" ] ; then
       wget -P ${configTrojanPath}/trojan-win-cli-temp https://github.com/p4gefau1t/trojan-go/releases/download/v${trojanVersion}/trojan-go-windows-amd64.zip
       unzip -d ${configTrojanPath}/trojan-win-cli-temp ${configTrojanPath}/trojan-win-cli-temp/trojan-go-windows-amd64.zip
-      mv -f ${configTrojanPath}/trojan-win-cli-temp/trojan-go-windows-amd64/trojan-go.exe ${configTrojanPath}/trojan-win-cli/
+      mv -f ${configTrojanPath}/trojan-win-cli-temp/*.* ${configTrojanPath}/trojan-win-cli/
     fi
 
 
@@ -889,7 +889,7 @@ EOF
 	red "    nginx 访问日志 ${nginxAccessLogFile} !"
 	red "    nginx 错误日志 ${nginxErrorLogFile} !"
 	red "    Trojan 服务器端配置路径 ${configTrojanPath}/src/server.conf !"
-	red "    Trojan 访问日志 ${configTrojanLogFile} !"
+	red "    Trojan 访问日志 ${configTrojanLogFile} 或运行 journalctl -u trojan.service 查看 !" 
 	green "    trojan 停止命令: systemctl stop trojan.service  启动命令: systemctl start trojan.service  重启命令: systemctl restart trojan.service"
 	green "    nginx 停止命令: systemctl stop nginx.service  启动命令: systemctl start nginx.service  重启命令: systemctl restart nginx.service"
 	green "    Trojan 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
