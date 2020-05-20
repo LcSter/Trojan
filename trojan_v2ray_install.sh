@@ -560,12 +560,12 @@ function install_trojan_server(){
 
     #trojanVersion=$(curl --silent "https://api.github.com/repos/trojan-gfw/trojan/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")')
 
-    if [ $isTrojanGo = "no"] ; then
+    if [ "$isTrojanGo" = "no" ] ; then
       trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
       configTrojanCli="trojan-${trojanVersion}-linux-amd64.tar.xz"
     fi
 
-    if [ $isTrojanGo = "yes"] ; then
+    if [ "$isTrojanGo" = "yes" ] ; then
       trojanVersion=$(getGithubLatestReleaseVersion "p4gefau1t/trojan-go")
       configTrojanCli="${configTrojanGoCli}"
     fi
@@ -589,13 +589,13 @@ function install_trojan_server(){
     mkdir ${configTrojanPath}/src
 
 
-    if [ $isTrojanGo = "no"] ; then
+    if [ "$isTrojanGo" = "no"] ; then
       wget -O ${configTrojanPath}/${configTrojanCli}  https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/${configTrojanCli}
 	    tar xf ${configTrojanCli} -C ${configTrojanPath}
 	    mv ${configTrojanPath}/trojan ${configTrojanPath}/src
     fi
 
-    if [ $isTrojanGo = "yes"] ; then
+    if [ "$isTrojanGo" = "yes"] ; then
       # https://github.com/p4gefau1t/trojan-go/releases/download/v0.4.11/trojan-go-linux-amd64.zip
       wget -O ${configTrojanPath}/${configTrojanCli}  https://github.com/p4gefau1t/trojan-go/releases/download/v${trojanVersion}/${configTrojanCli}
 	    unzip -d ${configTrojanPath} ${configTrojanCli}
@@ -927,11 +927,11 @@ function installTrojanWholeProcess(){
     green "=============================================="
 
 
-    if [ $isTrojanGo = "no"] ; then
+    if [ "$isTrojanGo" = "no"] ; then
       configTrojanPath = "$configTrojanOriginalPath"
     fi
 
-    if [ $isTrojanGo = "yes"] ; then
+    if [ "$isTrojanGo" = "yes"] ; then
       configTrojanPath = "$configTrojanGoPath"
       showTrojanName="-go"
     fi
@@ -994,12 +994,12 @@ function remove_trojan(){
         apt autoremove -y nginx
     fi
 
-    if [ $isTrojanGo = "no"] ; then
+    if [ "$isTrojanGo" = "no" ] ; then
       showTrojanName=""
       configTrojanPath = "$configTrojanOriginalPath"
     fi
 
-    if [ $isTrojanGo = "yes"] ; then
+    if [ "$isTrojanGo" = "yes" ] ; then
       configTrojanPath = "$configTrojanGoPath"
       showTrojanName="-go"
     fi
