@@ -590,7 +590,7 @@ function install_trojan_server(){
 
     cd ${configTrojanPath}
     rm -rf ${configTrojanPath}/src
-    mkdir ${configTrojanPath}/src
+    mkdir -p ${configTrojanPath}/src
 
 
     if [ "$isTrojanGo" = "no" ] ; then
@@ -602,8 +602,7 @@ function install_trojan_server(){
     if [ "$isTrojanGo" = "yes" ] ; then
       # https://github.com/p4gefau1t/trojan-go/releases/download/v0.4.11/trojan-go-linux-amd64.zip
       wget -O ${configTrojanPath}/${configTrojanCli}  https://github.com/p4gefau1t/trojan-go/releases/download/v${trojanVersion}/${configTrojanCli}
-	    unzip -d ${configTrojanPath} ${configTrojanCli}
-	    mv ${configTrojanPath}/trojan-go-linux-amd64 ${configTrojanPath}/src
+	    unzip -d ${configTrojanPath}/src ${configTrojanCli}
     fi
 
 	  cat > ${configTrojanPath}/src/server.conf <<-EOF
