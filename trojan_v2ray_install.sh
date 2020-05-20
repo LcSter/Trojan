@@ -566,7 +566,8 @@ function install_trojan_server(){
     fi
 
     if [ "$isTrojanGo" = "yes" ] ; then
-      trojanVersion=$(getGithubLatestReleaseVersion "p4gefau1t/trojan-go")
+      # trojanVersion=$(getGithubLatestReleaseVersion "p4gefau1t/trojan-go")
+      trojanVersion="0.4.11"
       configTrojanCli="${configTrojanGoCli}"
     fi
 
