@@ -761,7 +761,9 @@ function install_trojan_server(){
 EOF
 
     # 增加启动脚本
-    cat > ${osSystemmdPath}trojan.service <<-EOF
+    if [ "$isTrojanGo" = "no" ] ; then
+
+      cat > ${osSystemmdPath}trojan.service <<-EOF
 [Unit]
 Description=trojan${showTrojanName}
 After=network.target
@@ -777,6 +779,27 @@ PrivateTmp=true
 [Install]
 WantedBy=multi-user.target
 EOF
+    fi
+
+    if [ "$isTrojanGo" = "yes" ] ; then
+
+      cat > ${osSystemmdPath}trojan.service <<-EOF
+[Unit]
+Description=trojan${showTrojanName}
+After=network.target
+
+[Service]
+Type=simple
+PIDFile=${configTrojanPath}/src/trojan.pid
+ExecStart=${configTrojanPath}/src/trojan${showTrojanName} -c "${configTrojanPath}/src/server.conf"
+ExecReload=/bin/kill -HUP \$MAINPID
+ExecStop=${configTrojanPath}/src/trojan${showTrojanName}
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    fi
 
     chmod +x ${osSystemmdPath}trojan.service
     systemctl daemon-reload
