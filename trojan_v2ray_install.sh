@@ -1434,7 +1434,7 @@ function start_menu(){
     echo
     green " 5. 安装 trojan-go 和 nginx 不支持CDN"
     green " 6. 修复证书 并继续安装 trojan-go"
-    red " 7. 卸载 trojan 与 nginx"
+    red " 7. 卸载 trojan-go 与 nginx"
     echo
     green " 11. 安装 v2ray 和 Caddy, 支持 websocket tls1.3, 支持CDN"
     red " 12. 卸载v2ray 和 Caddy"
@@ -1505,7 +1505,7 @@ function start_menu(){
         ;;
         16 )
             setRootLogin
-            sleep 10s
+            sleep 5s
             start_menu
         ;;
         17 )
