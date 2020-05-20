@@ -369,13 +369,21 @@ nginxConfigPath="/etc/nginx/nginx.conf"
 nginxAccessLogFile="${HOME}/nginx-trojan-access.log"
 nginxErrorLogFile="${HOME}/nginx-trojan-error.log"
 
+showTrojanName = ""
+isTrojanGo="no"
+trojanVersion="1.15.1"
+configTrojanCli="trojan-${trojanVersion}-linux-amd64.tar.xz"
+configTrojanOriginalCli="trojan-${trojanVersion}-linux-amd64.tar.xz"
+configTrojanGoCli="trojan-go-linux-amd64.zip"
 configTrojanPasswordPrefix="jin"
 configTrojanPath="${HOME}/trojan"
+configTrojanOriginalPath="${HOME}/trojan"
+configTrojanGoPath="${HOME}/trojan-go"
 configTrojanLogFile="${HOME}/trojan-access.log"
 configTrojanCertPath="${HOME}/trojan/cert"
-configTrojanWebsitePath="${HOME}/trojan/website/html"
+configTrojanWebsitePath="${configTrojanPath}/website/html"
 configTrojanWindowsCliPath=$(cat /dev/urandom | head -1 | md5sum | head -c 20)
-trojanVersion="1.15.1"
+
 
 
 
@@ -427,6 +435,7 @@ function compareRealIpWithLocalIp(){
 }
 
 function install_nginx(){
+
 
     green "=============================================="
     yellow "   开始安装 Web服务器 nginx !"
@@ -548,31 +557,52 @@ function install_trojan_server(){
     trojanPassword10=$(cat /dev/urandom | head -1 | md5sum | head -c 10)
 
     #wget https://github.com/trojan-gfw/trojan/releases/download/v1.15.1/trojan-1.15.1-linux-amd64.tar.xz
-    trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
+
     #trojanVersion=$(curl --silent "https://api.github.com/repos/trojan-gfw/trojan/releases/latest" | grep -Po '"tag_name": "v\K.*?(?=")')
 
-    if [[ -f ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz ]]; then
+    if [ $isTrojanGo = "no"] ; then
+      trojanVersion=$(getGithubLatestReleaseVersion "trojan-gfw/trojan")
+      configTrojanCli="trojan-${trojanVersion}-linux-amd64.tar.xz"
+    fi
+
+    if [ $isTrojanGo = "yes"] ; then
+      trojanVersion=$(getGithubLatestReleaseVersion "p4gefau1t/trojan-go")
+      configTrojanCli="${configTrojanGoCli}"
+    fi
+
+    if [[ -f "${configTrojanPath}/${configTrojanCli}" ]]; then
 
         green "=========================================="
-        green "  已安装过 Trojan v${trojanVersion}, 退出安装 !"
+        green "  已安装过 Trojan${showTrojanName} v${trojanVersion}, 退出安装 !"
         green "=========================================="
         exit
     fi
+
     green "=========================================="
-    green "       开始安装 Trojan Version: ${trojanVersion} !"
+    green "       开始安装 Trojan${showTrojanName} Version: ${trojanVersion} !"
     green "=========================================="
     read -p "请输入trojan密码的前缀? (会生成若干随机密码和带有指定该前缀的密码)" configTrojanPasswordPrefix
     configTrojanPasswordPrefix=${configTrojanPasswordPrefix:-jin}
 
     cd ${configTrojanPath}
     rm -rf ${configTrojanPath}/src
-
-	wget -O ${configTrojanPath}/trojan-${trojanVersion}-linux-amd64.tar.xz  https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/trojan-${trojanVersion}-linux-amd64.tar.xz
-	tar xf trojan-${trojanVersion}-linux-amd64.tar.xz -C ${configTrojanPath}
-	mv ${configTrojanPath}/trojan ${configTrojanPath}/src
+    mkdir ${configTrojanPath}/src
 
 
-	cat > ${configTrojanPath}/src/server.conf <<-EOF
+    if [ $isTrojanGo = "no"] ; then
+      wget -O ${configTrojanPath}/${configTrojanCli}  https://github.com/trojan-gfw/trojan/releases/download/v${trojanVersion}/${configTrojanCli}
+	    tar xf ${configTrojanCli} -C ${configTrojanPath}
+	    mv ${configTrojanPath}/trojan ${configTrojanPath}/src
+    fi
+
+    if [ $isTrojanGo = "yes"] ; then
+      # https://github.com/p4gefau1t/trojan-go/releases/download/v0.4.11/trojan-go-linux-amd64.zip
+      wget -O ${configTrojanPath}/${configTrojanCli}  https://github.com/p4gefau1t/trojan-go/releases/download/v${trojanVersion}/${configTrojanCli}
+	    unzip -d ${configTrojanPath} ${configTrojanCli}
+	    mv ${configTrojanPath}/trojan-go-linux-amd64 ${configTrojanPath}/src
+    fi
+
+	  cat > ${configTrojanPath}/src/server.conf <<-EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -730,25 +760,25 @@ EOF
     # 增加启动脚本
     cat > ${osSystemmdPath}trojan.service <<-EOF
 [Unit]
-Description=trojan
+Description=trojan${showTrojanName}
 After=network.target
 
 [Service]
 Type=simple
 PIDFile=${configTrojanPath}/src/trojan.pid
-ExecStart=${configTrojanPath}/src/trojan -l $configTrojanLogFile -c "${configTrojanPath}/src/server.conf"
+ExecStart=${configTrojanPath}/src/trojan${showTrojanName} -l $configTrojanLogFile -c "${configTrojanPath}/src/server.conf"
 ExecReload=/bin/kill -HUP \$MAINPID
-ExecStop=${configTrojanPath}/src/trojan
+ExecStop=${configTrojanPath}/src/trojan${showTrojanName}
 PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-	chmod +x ${osSystemmdPath}trojan.service
-	systemctl daemon-reload
-	systemctl start trojan.service
-	systemctl enable trojan.service
+    chmod +x ${osSystemmdPath}trojan.service
+    systemctl daemon-reload
+    systemctl start trojan.service
+    systemctl enable trojan.service
 
 
 
@@ -765,7 +795,7 @@ EOF
     unzip -d ${configTrojanPath}/trojan-win-cli-temp ${configTrojanPath}/trojan-win-cli-temp/trojan-${trojanVersion}-win.zip
     mv -f ${configTrojanPath}/trojan-win-cli-temp/trojan/trojan.exe ${configTrojanPath}/trojan-win-cli/
 
-	cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
+	  cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
 
     cat > ${configTrojanPath}/trojan-win-cli/config.json <<-EOF
 {
@@ -803,7 +833,7 @@ EOF
     cd ${configTrojanPath}/trojan-win-cli/
     zip -r trojan-win-cli.zip ${configTrojanPath}/trojan-win-cli/
     mkdir -p ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
-	mv ${configTrojanPath}/trojan-win-cli/trojan-win-cli.zip ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
+	  mv ${configTrojanPath}/trojan-win-cli/trojan-win-cli.zip ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
 
 
 
@@ -816,7 +846,7 @@ EOF
 
 
 	green "======================================================================"
-	green "    Trojan Version: ${trojanVersion} 安装成功 !!"
+	green "    Trojan${showTrojanName} Version: ${trojanVersion} 安装成功 !!"
 	green "    伪装站点为 http://${configDomainTrojan}!"
 	green "    伪装站点的静态html内容放置在目录 ${configTrojanWebsitePath}, 可自行更换网站内容!"
 	red "    nginx 配置路径 ${nginxConfigPath} !"
@@ -829,7 +859,7 @@ EOF
 	green "    Trojan 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
 	green "======================================================================"
 	blue  "----------------------------------------"
-	yellow "Trojan 配置信息如下, 请自行复制保存, 密码任选其一 !!"
+	yellow "Trojan${showTrojanName} 配置信息如下, 请自行复制保存, 密码任选其一 !!"
 	yellow "服务器地址: ${configDomainTrojan}  端口: 443"
 	yellow "密码1: ${trojanPassword1}"
 	yellow "密码2: ${trojanPassword2}"
@@ -896,6 +926,18 @@ function installTrojanWholeProcess(){
     fi
     green "=============================================="
 
+
+    if [ $isTrojanGo = "no"] ; then
+      configTrojanPath = "$configTrojanOriginalPath"
+    fi
+
+    if [ $isTrojanGo = "yes"] ; then
+      configTrojanPath = "$configTrojanGoPath"
+      showTrojanName="-go"
+    fi
+
+    configTrojanWebsitePath="${configTrojanPath}/website/html"
+
     read configDomainTrojan
     if compareRealIpWithLocalIp "${configDomainTrojan}" ; then
 
@@ -952,6 +994,16 @@ function remove_trojan(){
         apt autoremove -y nginx
     fi
 
+    if [ $isTrojanGo = "no"] ; then
+      showTrojanName=""
+      configTrojanPath = "$configTrojanOriginalPath"
+    fi
+
+    if [ $isTrojanGo = "yes"] ; then
+      configTrojanPath = "$configTrojanGoPath"
+      showTrojanName="-go"
+    fi
+
     rm -f ${osSystemmdPath}trojan.service
     rm -rf ${configTrojanPath}
     rm -rf /root/.acme.sh/
@@ -959,7 +1011,7 @@ function remove_trojan(){
     crontab -r
 
     green "================================"
-    green "  trojan 和 nginx 卸载完毕 !"
+    green "  trojan${showTrojanName} 和 nginx 卸载完毕 !"
     green "  crontab 定时任务 删除完毕 !"
     green "================================"
 }
@@ -1380,17 +1432,21 @@ function start_menu(){
     green " 3. 修复证书 并继续安装 trojan"
     red " 4. 卸载 trojan 与 nginx"
     echo
-    green " 5. 安装 v2ray 和 Caddy, 支持 websocket tls1.3, 支持CDN"
-    red " 6. 卸载v2ray 和 Caddy"
+    green " 5. 安装 trojan-go 和 nginx 不支持CDN"
+    green " 6. 修复证书 并继续安装 trojan-go"
+    red " 7. 卸载 trojan 与 nginx"
     echo
-    green " 7. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
-    red " 8. 卸载 trojan + v2ray 和 nginx"
+    green " 11. 安装 v2ray 和 Caddy, 支持 websocket tls1.3, 支持CDN"
+    red " 12. 卸载v2ray 和 Caddy"
+    echo
+    green " 13. 同时安装 trojan + v2ray 和 nginx, 不支持CDN"
+    red " 14. 卸载 trojan + v2ray 和 nginx"
     echo
     green " ======================================="
     echo
-    green " 9. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"    
-    green " 10. 设置可以使用root登陆"
-    green " 11. 修改SSH 登陆端口号"
+    green " 15. 安装OhMyZsh与插件zsh-autosuggestions, Micro编辑器 等软件"
+    green " 16. 设置可以使用root登陆"
+    green " 17. 修改SSH 登陆端口号"
     echo
     green " ======================================="
     echo
@@ -1418,29 +1474,41 @@ function start_menu(){
             remove_trojan
         ;;
         5 )
+            isTrojanGo="yes"
+            installTrojanWholeProcess
+        ;;
+        6 )
+            isTrojanGo="yes"
+            repair_cert
+        ;;
+        7 )
+            isTrojanGo="yes"
+            remove_trojan
+        ;;
+        11 )
             install_caddy
             install_v2ray
         ;;
-        6 )
+        12 )
             remove_caddy
         ;;
-        7 )
+        13 )
             installTrojanWholeProcess
             install_v2ray
         ;;
-        8 )
+        14 )
             remove_trojan
             remove_v2ray
         ;;
-        9 )
+        15 )
             installOnMyZsh
         ;;
-        10 )
+        16 )
             setRootLogin
             sleep 10s
             start_menu
         ;;
-        11 )
+        17 )
             changeSSHPort
             sleep 10s
             start_menu
