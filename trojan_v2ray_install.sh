@@ -120,6 +120,16 @@ function installOnMyZsh(){
     setDateZone
     testPortUsage
 
+    # 安装 micro 编辑器
+    if [[ ! -f "${HOME}/bin/micro" ]] ;  then
+        mkdir -p ${HOME}/bin
+        cd ${HOME}/bin
+        curl https://getmic.ro | bash
+
+        cp ${HOME}/bin/micro /usr/local/bin
+    fi
+
+
     green "=============================="
     yellow "准备安装 ZSH"
     green "=============================="
@@ -193,18 +203,6 @@ set nu!
 
 EOF
     fi
-
-
-    # 安装 micro 编辑器
-    mkdir -p ${HOME}/bin
-    cd ${HOME}/bin
-    curl https://getmic.ro | bash
-
-    cp ${HOME}/bin/micro /usr/local/bin
-
-
-
-
 
 }
 
@@ -827,11 +825,12 @@ EOF
     if [ "$isTrojanGo" = "yes" ] ; then
       wget -P ${configTrojanPath}/trojan-win-cli-temp https://github.com/p4gefau1t/trojan-go/releases/download/v${trojanVersion}/trojan-go-windows-amd64.zip
       unzip -d ${configTrojanPath}/trojan-win-cli-temp ${configTrojanPath}/trojan-win-cli-temp/trojan-go-windows-amd64.zip
-      mv -f ${configTrojanPath}/trojan-win-cli-temp/*.* ${configTrojanPath}/trojan-win-cli/
+      rm -f ${configTrojanPath}/trojan-win-cli-temp/trojan-go-windows-amd64.zip
+      mv -f ${configTrojanPath}/trojan-win-cli-temp/* ${configTrojanPath}/trojan-win-cli/
     fi
 
 
-	  cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
+    cp ${configTrojanCertPath}/fullchain.cer ${configTrojanPath}/trojan-win-cli/fullchain.cer
 
     cat > ${configTrojanPath}/trojan-win-cli/config.json <<-EOF
 {
@@ -869,7 +868,7 @@ EOF
     cd ${configTrojanPath}/trojan-win-cli/
     zip -r trojan-win-cli.zip ${configTrojanPath}/trojan-win-cli/
     mkdir -p ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
-	  mv ${configTrojanPath}/trojan-win-cli/trojan-win-cli.zip ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
+	mv ${configTrojanPath}/trojan-win-cli/trojan-win-cli.zip ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
 
 
 
