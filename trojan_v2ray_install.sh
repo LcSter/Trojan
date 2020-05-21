@@ -725,6 +725,7 @@ function install_trojan_server(){
         "${configTrojanPasswordPrefix}202099"
     ],
     "log_level": 1,
+    "log_file": "${configTrojanLogFile}",
     "ssl": {
         "cert": "$configTrojanCertPath/fullchain.cer",
         "key": "$configTrojanCertPath/private.key",
