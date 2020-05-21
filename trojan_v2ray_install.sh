@@ -868,7 +868,7 @@ EOF
     cd ${configTrojanPath}/trojan-win-cli/
     zip -r trojan-win-cli.zip ${configTrojanPath}/trojan-win-cli/
     mkdir -p ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
-	mv ${configTrojanPath}/trojan-win-cli/trojan-win-cli.zip ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
+    mv ${configTrojanPath}/trojan-win-cli/trojan-win-cli.zip ${configTrojanWebsitePath}/${configTrojanWindowsCliPath}
 
 
 
