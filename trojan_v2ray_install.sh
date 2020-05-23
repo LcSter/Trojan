@@ -603,7 +603,7 @@ function install_trojan_server(){
     if [ "$isTrojanGo" = "yes" ] ; then
         # https://github.com/p4gefau1t/trojan-go/releases/download/v0.4.11/trojan-go-linux-amd64.zip
         wget -O ${configTrojanPath}/${configTrojanCli}  https://github.com/p4gefau1t/trojan-go/releases/download/v${trojanVersion}/${configTrojanCli}
-	    unzip -d ${configTrojanPath}/src ${configTrojanCli}
+        unzip -d ${configTrojanPath}/src ${configTrojanCli}
     fi
 
 	  cat > ${configTrojanPath}/src/server.conf <<-EOF
@@ -894,7 +894,7 @@ EOF
 	red "    nginx 访问日志 ${nginxAccessLogFile} !"
 	red "    nginx 错误日志 ${nginxErrorLogFile} !"
 	red "    Trojan 服务器端配置路径 ${configTrojanPath}/src/server.conf !"
-	red "    Trojan 访问日志 ${configTrojanLogFile} 或运行 journalctl -u trojan.service 查看 !" 
+	red "    Trojan 访问日志 ${configTrojanLogFile} 或运行 journalctl -u trojan.service 查看 !"
 	green "    trojan 停止命令: systemctl stop trojan.service  启动命令: systemctl start trojan.service  重启命令: systemctl restart trojan.service"
 	green "    nginx 停止命令: systemctl stop nginx.service  启动命令: systemctl start nginx.service  重启命令: systemctl restart nginx.service"
 	green "    Trojan 服务器 每天会自动重启,防止内存泄漏. 运行 crontab -l 命令 查看定时重启命令 !"
@@ -1459,8 +1459,10 @@ function vps_LemonBench(){
 
 
 function start_menu(){
-    clear
     getLinuxOSVersion
+    $osSystemPackage install curl wget git -y
+    
+    clear
     green " ======================================="
     green " Trojan V2ray 一键安装自动脚本 2020-4-29 更新  "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
