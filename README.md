@@ -31,7 +31,7 @@ wget --no-check-certificate https://raw.githubusercontent.com/jinwyp/Trojan/mast
 
 
 
-![功能说明](https://github.com/jinwyp/Trojan/blob/master/docs/readme.png?raw=true)
+![功能说明](https://github.com/jinwyp/Trojan/blob/master/docs/readme.jpg?raw=true)
 
 
 ## 使用说明 Usage 
